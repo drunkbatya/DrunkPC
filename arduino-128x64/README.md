@@ -2,7 +2,7 @@
 It's an Arduino sketch, to test Samsung KS0108-based 128x64 dot LCD without any library.
 
 ## Shematic
-![shematic](https://raw.githubusercontent.com/drunkbatya/DrunkPC/master/assets/img/128x64_bb.png)
+![shematic](https://raw.githubusercontent.com/drunkbatya/DrunkPC/master/assets/img/128x64_arduino-v0.1.png)
 
 ## Usage
 U may send chars to display via UART like:
