@@ -6,6 +6,7 @@ C_SOURCES =  \
 src/main.c \
 src/sys_config.c \
 src/serial.c \
+src/eeprom.c \
 src/stm32f4xx_it.c \
 stm32/stm32f4xx_hal_msp.c \
 stm32/USB_DEVICE/App/usb_device.c \

@@ -15,7 +15,6 @@ void DrunkSerialInterrupt(void)
 
 void DrunkSerialRead(uint8_t *buf, uint32_t len)
 {
-    DrunkSerialWrite(buf, len);
     GPIOC->ODR = 0xFFFF;
     return;
 }
