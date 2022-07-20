@@ -9,17 +9,17 @@ CDefines=USE_HAL_DRIVER;STM32F401xE;USE_HAL_DRIVER;USE_HAL_DRIVER;
 [PreviousGenFiles]
 AdvancedFolderStructure=true
 HeaderFileListSize=3
-HeaderFiles#0=/Users/drunkbatya/dev_local/stm32/clock_test/Core/Inc/stm32f4xx_it.h
-HeaderFiles#1=/Users/drunkbatya/dev_local/stm32/clock_test/Core/Inc/stm32f4xx_hal_conf.h
-HeaderFiles#2=/Users/drunkbatya/dev_local/stm32/clock_test/Core/Inc/main.h
+HeaderFiles#0=/Users/drunkbatya/dev_local/DrunkPC/devBoard/devBoard-stm32-clock/Core/Inc/stm32f4xx_it.h
+HeaderFiles#1=/Users/drunkbatya/dev_local/DrunkPC/devBoard/devBoard-stm32-clock/Core/Inc/stm32f4xx_hal_conf.h
+HeaderFiles#2=/Users/drunkbatya/dev_local/DrunkPC/devBoard/devBoard-stm32-clock/Core/Inc/main.h
 HeaderFolderListSize=1
-HeaderPath#0=/Users/drunkbatya/dev_local/stm32/clock_test/Core/Inc
+HeaderPath#0=/Users/drunkbatya/dev_local/DrunkPC/devBoard/devBoard-stm32-clock/Core/Inc
 HeaderFiles=;
 SourceFileListSize=3
-SourceFiles#0=/Users/drunkbatya/dev_local/stm32/clock_test/Core/Src/stm32f4xx_it.c
-SourceFiles#1=/Users/drunkbatya/dev_local/stm32/clock_test/Core/Src/stm32f4xx_hal_msp.c
-SourceFiles#2=/Users/drunkbatya/dev_local/stm32/clock_test/Core/Src/main.c
+SourceFiles#0=/Users/drunkbatya/dev_local/DrunkPC/devBoard/devBoard-stm32-clock/Core/Src/stm32f4xx_it.c
+SourceFiles#1=/Users/drunkbatya/dev_local/DrunkPC/devBoard/devBoard-stm32-clock/Core/Src/stm32f4xx_hal_msp.c
+SourceFiles#2=/Users/drunkbatya/dev_local/DrunkPC/devBoard/devBoard-stm32-clock/Core/Src/main.c
 SourceFolderListSize=1
-SourcePath#0=/Users/drunkbatya/dev_local/stm32/clock_test/Core/Src
+SourcePath#0=/Users/drunkbatya/dev_local/DrunkPC/devBoard/devBoard-stm32-clock/Core/Src
 SourceFiles=;
 
