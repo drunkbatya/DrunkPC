@@ -90,14 +90,21 @@ void clearScreen(void) {
   setRamPage(0);  // set vram page to 0
 }
 
+void newLine(uint8_t *charPosition) {
+  setRamAddress(0);
+  shiftRamPage();
+  *charPosition = 0;
+}
+
 void writeChar(char c) {
   static uint8_t charPosition = 0;
   uint8_t chip;
   int offset = (c - ' ') * SYSTEM5x7_WIDTH;  // (space) is a first char in font
-  if (charPosition > (127 - SYSTEM5x7_WIDTH)) {
-    setRamAddress(0);
-    shiftRamPage();
-    charPosition = 0;
+  if (charPosition > (127 - SYSTEM5x7_WIDTH))
+    newLine(&charPosition);
+  if (c == '\n' || c == '\r') {
+    newLine(&charPosition);
+    return;
   }
   for (int i = 0; i < SYSTEM5x7_WIDTH; i++) {
     if (charPosition > 63)
