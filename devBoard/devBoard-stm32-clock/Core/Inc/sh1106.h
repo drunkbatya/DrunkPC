@@ -15,5 +15,6 @@
 
 void sh1106_init(GPIO_TypeDef *port, SPI_HandleTypeDef *spi, uint16_t dc_pin, uint16_t res_pin);
 void sh1106_write_str(char *str, uint8_t column, uint8_t page);
+void sh1106_write_num(int32_t num, uint8_t column, uint8_t page);
 void sh1106_dirty_clear_screen(void);
 #endif  // _SH1106_H_

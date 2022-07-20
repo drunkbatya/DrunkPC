@@ -1,3 +1,4 @@
+#include <string.h>
 #include "stm32f4xx_hal.h"
 #include "sh1106.h"
 #include "SystemFont5x7.h"
@@ -72,6 +73,68 @@ void sh1106_write_str(char *str, uint8_t column, uint8_t page)
         column += SYSTEM5x7_WIDTH;
     }
     sh1106_write(0, SH1106_DATA);
+}
+
+static char *sh1106_strrev(char *str) {
+    uint32_t end;
+    uint32_t start;
+    char temp;
+
+    start = 0;
+    end = strlen(str) - 1;
+    while (start < end) {
+        temp = str[end];
+        str[end] = str[start];
+        str[start] = temp;
+        end--;
+        start++;
+    }
+    return (str);
+}
+
+static char *sh1106_itoa(int32_t num) {
+    static char str[11];  // max length of int32_t
+    char *str_ptr;
+    uint8_t minus;
+
+    minus = 0;
+    str_ptr = str;
+    if (num < 0)
+    {
+        num = -num;
+        minus = 1;
+    }
+    while (num / 10) {
+        *str_ptr = '0' + (num % 10);
+        num /= 10;
+        str_ptr++;
+    }
+    *str_ptr = '0' + num;
+    if (minus)
+    {
+        str_ptr++;
+        *str_ptr = '-';
+    }
+    str_ptr++;
+    *str_ptr = '\0';
+    return (sh1106_strrev(str));
+}
+
+
+void sh1106_write_num(int32_t num, uint8_t column, uint8_t page)
+{
+    char *num_str;
+    uint8_t num_str_len;
+
+    num_str = sh1106_itoa(num);
+    num_str_len = strlen(num_str);
+    sh1106_write_str(num_str, column, page);
+    // dirty dirty hack.. TODO(fdrunkbatya): FIX!!!1!!111!
+    while (num_str_len < 6)
+    {
+        sh1106_write_str(" ", column + (num_str_len * SYSTEM5x7_WIDTH), page);
+        num_str_len++;
+    }
 }
 
 static void sh1106_reset(void)

@@ -90,16 +90,20 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;  // temp timer
+    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;  // temp timer
     sh1106_init(DISP_CTRL_PORT, &hspi1, DISP_DC, DISP_RES);
     sh1106_dirty_clear_screen();
-    sh1106_write_str("#!/bin/bash", 40, 3);
-    sh1106_write_str("Kate is soska!", 30, 5);
+    sh1106_write_str("#!/bin/bash", 40, 2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
+    sh1106_write_str("Cunter = ", 30, 4);
+    sh1106_write_num((DWT->CYCCNT / (SystemCoreClock / 1000000U) / 10000), 75, 4);
     /* USER CODE END WHILE */
   }
   /* USER CODE END 3 */
