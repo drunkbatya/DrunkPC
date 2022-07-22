@@ -21,6 +21,6 @@ void sh1106_write_buffer(void);
 void sh1106_write_all_chars(void);
 void sh1106_clear_screen(void);
 void sh1106_write_str(char *str, uint8_t column, uint8_t page);
-inline void sh1106_write_num(int32_t num, uint8_t column, uint8_t page);
+void sh1106_write_num(int32_t num, uint8_t column, uint8_t page);
 
 #endif  // _SH1106_BUF_H_

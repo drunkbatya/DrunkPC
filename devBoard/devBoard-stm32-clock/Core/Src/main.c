@@ -23,6 +23,8 @@
 /* USER CODE BEGIN Includes */
 #include <string.h>
 #include "sh1106_buf.h"
+#include "menu.h"
+#include "encoder.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -96,7 +98,9 @@ int main(void)
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
     HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
+    encoder_init(TIM1);
     sh1106_init(DISP_CTRL_PORT, &hspi1, DISP_DC, DISP_RES);
+
     // sh1106_dirty_clear_screen();
     // sh1106_write_str("#!/bin/bash", 40, 2);
   /* USER CODE END 2 */
@@ -105,14 +109,14 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-    // sh1106_write_str("Cunter = ", 30, 4);
-    ///sh1106_write_num(TIM1->CNT, 75, 4);
-    sh1106_clear_screen();
-    sh1106_write_str("I try to test this display, it's amazing, but it works!! I can just put new line character (\\n)\nand text will be placed to new line!", 0, 0);
-    sh1106_write_str("Encoder: ", 0, 6);
-    sh1106_write_num(TIM1->CNT, (strlen("Encoder: ") * 5), 6);
-    sh1106_write_buffer();
+        t_encoder_move encoder_cur = encoder_move();
+        if (encoder_cur == ENCODER_DOWN)
+            menu_prev();
+        if (encoder_cur == ENCODER_UP)
+            menu_next();
+        sh1106_clear_screen();
+        menu_show_view();
+        sh1106_write_buffer();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
