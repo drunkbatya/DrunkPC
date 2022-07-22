@@ -21,7 +21,9 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "sh1106.h"
+#include <stdio.h>
+#include <string.h>
+#include "sh1106_buf.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -96,8 +98,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
     HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
     sh1106_init(DISP_CTRL_PORT, &hspi1, DISP_DC, DISP_RES);
-    sh1106_dirty_clear_screen();
-    sh1106_write_str("#!/bin/bash", 40, 2);
+    // sh1106_dirty_clear_screen();
+    // sh1106_write_str("#!/bin/bash", 40, 2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -105,8 +107,15 @@ int main(void)
   while (1)
   {
 
-    sh1106_write_str("Cunter = ", 30, 4);
-    sh1106_write_num(TIM1->CNT, 75, 4);
+    // sh1106_write_str("Cunter = ", 30, 4);
+    ///sh1106_write_num(TIM1->CNT, 75, 4);
+    sh1106_clear_screen();
+    sh1106_write_str("I try to test this display, it's amazing, but it works!! I can just put new line character (\\n)\nand text will be placed to new line!", 0, 0);
+    char str[12];  // int32_t max + sign + '\0'
+    sprintf(str, "%ld", TIM1->CNT);
+    sh1106_write_str("Encoder: ", 0, 6);
+    sh1106_write_str(str, (strlen("Encoder: ") * 5), 6);
+    sh1106_write_buffer();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

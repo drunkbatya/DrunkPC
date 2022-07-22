@@ -1,78 +1,30 @@
 #include <string.h>
 #include "stm32f4xx_hal.h"
-#include "sh1106.h"
 #include "SystemFont5x7.h"
+#include "sh1106_buf.h"
 
 static GPIO_TypeDef *sh1106_port;
 static uint16_t sh1106_dc_pin;
 static uint16_t sh1106_res_pin;
 static SPI_HandleTypeDef *sh1106_spi;
 
-static void sh1106_write_arr(const uint8_t *data, uint8_t count, uint8_t cmd_or_data)
-{
-    HAL_GPIO_WritePin(sh1106_port, sh1106_dc_pin, cmd_or_data);
-    HAL_SPI_Transmit(sh1106_spi, (uint8_t *)data, count, 1);
-}
+uint8_t sh1106_buf[SH1106_WIDTH * SH1106_HEIGHT];
 
 static void sh1106_write(uint8_t data, uint8_t cmd_or_data)
 {
-    sh1106_write_arr(&data, 1, cmd_or_data);
+    HAL_GPIO_WritePin(sh1106_port, sh1106_dc_pin, cmd_or_data);
+    HAL_SPI_Transmit(sh1106_spi, &data, 1, 1);
 }
 
-static void sh1106_set_ram_page(uint8_t page)
+static inline void sh1106_set_ram_page(uint8_t page)
 {
     sh1106_write(SH1106_SET_RAM_PAGE + page, SH1106_CMD);
 }
 
-static void sh1106_set_column_address(uint8_t address)
+static inline void sh1106_set_column_address(uint8_t address)
 {
     sh1106_write(SH1106_SET_LOWER_COLUMN_BITS + (address & 0x0F), SH1106_CMD);
     sh1106_write(SH1106_SET_HIGHER_COLUMN_BITS + ((address & 0xF0) >> 4), SH1106_CMD);
-}
-
-static void sh1106_write_array(const uint8_t *arr, uint16_t arr_size, uint8_t column, uint8_t page, uint8_t max_column, uint8_t max_page)
-{
-    uint16_t arr_count = 0;
-    for (uint8_t count_page = page; count_page < max_page; count_page++)
-    {
-        sh1106_set_ram_page(count_page);
-        sh1106_set_column_address(column);
-        for (uint8_t count_column = column; count_column < max_column; count_column++)
-        {
-            if (arr == NULL)
-            {
-                sh1106_write(0, SH1106_DATA);
-                continue;
-            }
-            sh1106_write(arr[arr_count], SH1106_DATA);
-            arr_count++;
-            if (arr_count >= arr_size)
-                return;
-        }
-    }
-}
-
-static void sh1106_write_char(char ch, uint8_t column, uint8_t page)
-{
-    sh1106_set_ram_page(page);
-    sh1106_set_column_address(column);
-    sh1106_write_arr(&System5x7[(ch - ' ') * SYSTEM5x7_WIDTH], SYSTEM5x7_WIDTH, SH1106_DATA);
-}
-
-void sh1106_write_str(char *str, uint8_t column, uint8_t page)
-{
-    while (*str != '\0')
-    {
-        if (column > SH1106_WIDTH)
-        {
-            column = 0;
-            page++;
-        }
-        sh1106_write_char(*str, column, page);
-        str++;
-        column += SYSTEM5x7_WIDTH;
-    }
-    sh1106_write(0, SH1106_DATA);
 }
 
 static char *sh1106_strrev(char *str) {
@@ -93,7 +45,7 @@ static char *sh1106_strrev(char *str) {
 }
 
 static char *sh1106_itoa(int32_t num) {
-    static char str[11];  // max length of int32_t
+    static char str[12];  // int32_t max + sign + '\0'
     char *str_ptr;
     uint8_t minus;
 
@@ -120,34 +72,72 @@ static char *sh1106_itoa(int32_t num) {
     return (sh1106_strrev(str));
 }
 
-
-void sh1106_write_num(int32_t num, uint8_t column, uint8_t page)
+void sh1106_write_buffer(void)
 {
-    char *num_str;
-    uint8_t num_str_len;
+    uint8_t *buf_ptr;
 
-    num_str = sh1106_itoa(num);
-    num_str_len = strlen(num_str);
-    sh1106_write_str(num_str, column, page);
-    // dirty dirty hack.. TODO(fdrunkbatya): FIX!!!1!!111!
-    while (num_str_len < 6)
+    buf_ptr = sh1106_buf;
+    for (uint8_t count_page = 0; count_page < SH1106_PAGES; count_page++)
     {
-        sh1106_write_str(" ", column + (num_str_len * SYSTEM5x7_WIDTH), page);
-        num_str_len++;
+        sh1106_set_ram_page(count_page);
+        sh1106_set_column_address(0);
+        HAL_GPIO_WritePin(sh1106_port, sh1106_dc_pin, SH1106_DATA);
+        HAL_SPI_Transmit(sh1106_spi, buf_ptr, SH1106_WIDTH, 1);
+        buf_ptr += SH1106_WIDTH;
+        while (HAL_SPI_GetState(sh1106_spi) != HAL_SPI_STATE_READY)
+        {
+            ;;
+        }
     }
 }
 
-static void sh1106_reset(void)
+static inline void sh1106_new_line(uint8_t *column, uint8_t *page)
+{
+    ++*page;
+    *column = 0;
+}
+
+static void sh1106_write_char(char c, uint8_t column, uint8_t page)
+{
+    uint8_t *buf_ptr;
+
+    buf_ptr = sh1106_buf + (page * SH1106_WIDTH) + column;
+    memcpy(buf_ptr, System5x7 + ((c - ' ') * SYSTEM5x7_WIDTH), SYSTEM5x7_WIDTH);
+}
+
+void sh1106_write_str(char *str, uint8_t column, uint8_t page)
+{
+    while (*str != '\0')
+    {
+        if (*str == '\n')
+        {
+            sh1106_new_line(&column, &page);
+            str++;
+        }
+        sh1106_write_char(*str, column, page);
+        str++;
+        column += SYSTEM5x7_WIDTH;
+        if ((column + SYSTEM5x7_WIDTH) >= SH1106_WIDTH)
+            sh1106_new_line(&column, &page);
+    }
+}
+
+void sh1106_write_num(int32_t num, uint8_t column, uint8_t page)
+{
+    sh1106_write_str(sh1106_itoa(num), column, page);
+}
+
+void sh1106_clear_screen(void)
+{
+    memset(sh1106_buf, 0, (SH1106_WIDTH * SH1106_HEIGHT));
+}
+
+static inline void sh1106_reset(void)
 {
     HAL_GPIO_WritePin(sh1106_port, sh1106_res_pin, GPIO_PIN_RESET);
     HAL_Delay(1);
     HAL_GPIO_WritePin(sh1106_port, sh1106_res_pin, GPIO_PIN_SET);
     HAL_Delay(1);
-}
-
-void sh1106_dirty_clear_screen(void)
-{
-    sh1106_write_array(NULL, 0, 11, 1, SH1106_WIDTH - 8, 7);
 }
 
 static void sh1106_set_default(uint8_t contrast, uint8_t bright)

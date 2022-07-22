@@ -7,6 +7,7 @@
 
 #define SYSTEM5x7_WIDTH 5
 #define SYSTEM5x7_HEIGHT 7
+#define SYSTEM5x7_TOTAL 96
 
 const uint8_t System5x7[] = {
     0x00, 0x00, 0x00, 0x00, 0x00,  // (space)
