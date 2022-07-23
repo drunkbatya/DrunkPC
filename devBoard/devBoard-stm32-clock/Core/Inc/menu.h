@@ -5,7 +5,7 @@
 
 typedef struct s_menu_item {
     uint8_t prev_id;
-    void *render;
+    void (*render)(void);
     uint8_t next_id;
 } t_menu_item;
 

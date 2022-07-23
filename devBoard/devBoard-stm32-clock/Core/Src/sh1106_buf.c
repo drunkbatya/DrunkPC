@@ -1,7 +1,7 @@
 #include <string.h>
 #include "stm32f4xx_hal.h"
-#include "SystemFont5x7.h"
 #include "sh1106_buf.h"
+#include "SystemFont5x7.h"
 
 static GPIO_TypeDef *sh1106_port;
 static uint16_t sh1106_dc_pin;
@@ -105,6 +105,36 @@ static void sh1106_write_char(char c, uint8_t column, uint8_t page)
     memcpy(buf_ptr, System5x7 + ((c - ' ') * SYSTEM5x7_WIDTH), SYSTEM5x7_WIDTH);
 }
 
+static uint8_t *sh1106_inv_memcpy(uint8_t *dest, const uint8_t *src, uint16_t count)
+{
+    uint8_t *new_dest;
+
+    new_dest = dest;
+    while ((new_dest - dest) < count)
+    {
+        *new_dest = ~(*src);
+        src++;
+        new_dest++;
+    }
+    return (dest);
+}
+
+static void sh1106_write_char_inv(char c, uint8_t column, uint8_t page)
+{
+    uint8_t *buf_ptr;
+    uint8_t *buf_ptr_before;
+
+    buf_ptr_before = sh1106_buf + ((page - 1) * SH1106_WIDTH) + column;
+    for (uint8_t i = 0; i < SYSTEM5x7_WIDTH; i++)
+    {
+        buf_ptr_before[i] |= 0x80;
+    }
+    buf_ptr = sh1106_buf + (page * SH1106_WIDTH) + column;
+    memset((buf_ptr - 1), 0xFF, 1);
+    sh1106_inv_memcpy(buf_ptr, System5x7 + ((c - ' ') * SYSTEM5x7_WIDTH), SYSTEM5x7_WIDTH);
+    memset((buf_ptr + SYSTEM5x7_WIDTH), 0xFF, 1);
+}
+
 void sh1106_write_str(char *str, uint8_t column, uint8_t page)
 {
     while (*str != '\0')
@@ -115,6 +145,23 @@ void sh1106_write_str(char *str, uint8_t column, uint8_t page)
             str++;
         }
         sh1106_write_char(*str, column, page);
+        str++;
+        column += SYSTEM5x7_WIDTH;
+        if ((column + SYSTEM5x7_WIDTH) >= SH1106_WIDTH)
+            sh1106_new_line(&column, &page);
+    }
+}
+
+void sh1106_write_str_inv(char *str, uint8_t column, uint8_t page)
+{
+    while (*str != '\0')
+    {
+        if (*str == '\n')
+        {
+            sh1106_new_line(&column, &page);
+            str++;
+        }
+        sh1106_write_char_inv(*str, column, page);
         str++;
         column += SYSTEM5x7_WIDTH;
         if ((column + SYSTEM5x7_WIDTH) >= SH1106_WIDTH)

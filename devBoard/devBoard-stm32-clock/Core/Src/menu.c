@@ -7,30 +7,36 @@ static uint8_t current_view_id = 0;
 
 static void disp0(void)
 {
-    sh1106_write_str("I try to test this display, it's amazing, but it works!! I can just put new line character (\\n)\nand text will be placed to new line!", 0, 0);
-    sh1106_write_str("Encoder: ", 0, 6);
-    sh1106_write_num(encoder_value(), (strlen("Encoder: ") * 5), 6);
+    sh1106_write_str_inv("FREQ", 1 * SH1106_CHAR_WIDTH, 7);
+    sh1106_write_str("STEP  BRGT  CONT", 7 * SH1106_CHAR_WIDTH, 7);
+    sh1106_write_str("Encoder: ", 0, 2);
+    sh1106_write_num(encoder_value(), (strlen("Encoder: ") * 5), 2);
 }
 
 static void disp1(void)
 {
-    sh1106_write_str("Disp1@@!!!fwegwef", 0, 0);
-    sh1106_write_str("Encoder: ", 0, 6);
-    sh1106_write_num(encoder_value(), (strlen("Encoder: ") * 5), 6);
+    sh1106_write_str("FREQ", 1 * SH1106_CHAR_WIDTH, 7);
+    sh1106_write_str_inv("STEP", 7 * SH1106_CHAR_WIDTH, 7);
+    sh1106_write_str("BRGT  CONT", 13 * SH1106_CHAR_WIDTH, 7);
+    sh1106_write_str("Encoder: ", 0, 2);
+    sh1106_write_num(encoder_value(), (strlen("Encoder: ") * 5), 2);
 }
 
 static void disp2(void)
 {
-    sh1106_write_str("Disp2wgwrbgwrgwgwfwefw", 0, 0);
-    sh1106_write_str("Encoder: ", 0, 6);
-    sh1106_write_num(encoder_value(), (strlen("Encoder: ") * 5), 6);
+    sh1106_write_str("FREQ  STEP", 1 * SH1106_CHAR_WIDTH, 7);
+    sh1106_write_str_inv("BRGT", 13 * SH1106_CHAR_WIDTH, 7);
+    sh1106_write_str("CONT", 19 * SH1106_CHAR_WIDTH, 7);
+    sh1106_write_str("Encoder: ", 0, 2);
+    sh1106_write_num(encoder_value(), (strlen("Encoder: ") * 5), 2);
 }
 
 static void disp3(void)
 {
-    sh1106_write_str("Disp3@@!!!*&O**^*^*(YHJKKGKUGUIY*(YUOHLHIOUU", 0, 0);
-    sh1106_write_str("Encoder: ", 0, 6);
-    sh1106_write_num(encoder_value(), (strlen("Encoder: ") * 5), 6);
+    sh1106_write_str("FREQ  STEP  BRGT", 1 * SH1106_CHAR_WIDTH, 7);
+    sh1106_write_str_inv("CONT", 19 * SH1106_CHAR_WIDTH, 7);
+    sh1106_write_str("Encoder: ", 0, 2);
+    sh1106_write_num(encoder_value(), (strlen("Encoder: ") * 5), 2);
 }
 
 static const t_menu_item views[4] = {
@@ -40,14 +46,9 @@ static const t_menu_item views[4] = {
     { 2, &disp3, 3 }
 };
 
-static void menu_show_view_wrapper(void (*view)())
-{
-    view();
-}
-
 void menu_show_view(void)
 {
-    menu_show_view_wrapper(views[current_view_id].render);
+    views[current_view_id].render();
 }
 
 void menu_prev(void)
