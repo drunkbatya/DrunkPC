@@ -7,4 +7,6 @@ SZ = $(PREFIX)size
 HEX = $(CP) -O ihex
 BIN = $(CP) -O binary -S
 PY = python3
+CC = zcc
+ZCC_TO_GAS = scripts/zcc_to_gas.py
 ASSETS_COMPILER = scripts/icon_convert.py

@@ -5,6 +5,21 @@ disasm: $(BUILDDIR)/$(TARGET).elf
 	@echo "\tDISASM\t" $(BUILDDIR)/$(TARGET).elf
 	@$(DU) -d build/$(TARGET).elf
 
+.PHONY: disasm-data
+disasm-data:
+	@echo "\tOBJ\t.data\t" $(BUILDDIR)/$(TARGET).elf
+	@z80-elf-objdump -j .data -d build/$(TARGET).elf
+
+.PHONY: disasm-bss
+disasm-bss:
+	@echo "\tOBJ\t.bss\t" $(BUILDDIR)/$(TARGET).elf
+	@z80-elf-objdump -j .bss -d build/$(TARGET).elf
+
+.PHONY: disasm-rodata
+disasm-rodata:
+	@echo "\tOBJ\t.rodata\t" $(BUILDDIR)/$(TARGET).elf
+	@z80-elf-objdump -j .rodata -d build/$(TARGET).elf
+
 .PHONY: xxd
 xxd: $(BUILDDIR)/$(TARGET).bin
 	@echo "\tXXD\t" $(BUILDDIR)/$(TARGET).bin
