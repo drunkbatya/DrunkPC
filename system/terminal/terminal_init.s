@@ -1,7 +1,7 @@
 .include "terminal/terminal.inc"
 .include "drivers/ra6963/ra6963.inc"
 
-terminal_init:
+_terminal_init:
     push hl  ; storing hl
 
     call ra6963_init

@@ -7,7 +7,6 @@ KEYBOARD_SHIFT_BIT = 1  ; bit 1
 KEYBOARD_SCAN_READ_DELAY_NOP = 6  ; in 'nop'`s
 
 ; Internal!
-; reg a not preserved!
 ; Args:
 ;   a - row bit mask
 ; Return:
@@ -31,22 +30,7 @@ keyboard_read_column:
 ;   unsigned char c - pressed char code
 ; C Prototype:
 ; unsigned char keyboard_get_key(void);
-keyboard_get_key:
-    exx  ; exchanging register pairs with their shadow
-    pop hl  ; return address
-    push bc  ; add one more arg cause functions recives none and returns 1 arg
-    push hl  ; pushing return pointer back
-    exx  ; restroing register pairs
-
-    push af  ; storing af
-    push ix  ; storing ix
-    push hl  ; storing hl
-    push de  ; storing de
-    push bc  ; storing bc
-
-    ld ix, 12  ; there is no way to set load sp value to ix, skipping pushed 5 reg pairs and the return address
-    add ix, sp  ; loading sp value to ix
-
+_keyboard_get_key:
     keyboard_get_key_check_shift:
     ld a, KEYBOARD_SHIFT_ROW  ; setting row 5
     call keyboard_read_column  ; arg in a, return in a
@@ -90,22 +74,21 @@ keyboard_get_key:
     jr z, keyboard_get_key_key_found_previous
     ld a, (hl)  ; found char byte
     ld (keyboard_previous_scanned_char), a  ; writing found char to var
-    ld (ix + 0), a  ; returning found byte
+    ld l, a  ; returning found byte
     jr keyboard_get_key_end
     keyboard_get_key_key_found_nothing:
     ld a, 0  ; nothing found
     ld (keyboard_previous_scanned_char), a  ; writing found char to var
     keyboard_get_key_key_found_previous:
-    ld (ix + 0), 0  ; returning 0 if found char == previously found char
+    ld l, 0  ; returning 0 if found char == previously found char
     keyboard_get_key_end:
     ld a, 0  ; resseting hardware row bitmask
     out (IO_KBD_ADDR), a
 
-    pop bc  ; restoring bc
-    pop de  ; restoring de
-    pop hl  ; restoring hl
-    pop ix  ; restoring ix
-    pop af  ; restoring af
+    ld h, 0
+    pop bc  ; return addr
+    push hl  ; return value
+    push bc  ; return addr
 
     ret
 

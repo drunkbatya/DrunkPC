@@ -1,5 +1,5 @@
-.include "main.inc"
 .global reset_handler
+.global _main
 .section .reset_handler,"a",%progbits
 
 reset_handler:
@@ -30,4 +30,4 @@ reset_handler:
             jr init_bss_section_loop  ; loop
     init_bss_section_end:
 
-    jp main
+    jp _main

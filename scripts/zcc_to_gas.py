@@ -21,7 +21,7 @@ class SCCZ80Converter:
             self.source_lines = f.readlines()
 
     @staticmethod
-    def replace_section(line):
+    def replace_section(line) -> str | None:
         section_name = re.match(r"\WSECTION\W(\w+)", line).group(1)
         if section_name == "code_compiler":
             section = ".text"
@@ -32,7 +32,7 @@ class SCCZ80Converter:
         elif section_name == "data_compiler":
             section = ".data"
         else:
-            raise Exception(f"Unknown section {section_name}")
+            return None
         return f".section {section}\n"
 
     @staticmethod
@@ -48,15 +48,19 @@ class SCCZ80Converter:
             return f"{symbol_name}:\n"
 
     @staticmethod
-    def fix_add_instruction(line):
-        parsed_line = re.match(r"(\W+)add\W+(\w+)(?:,(\w+))?", line)
+    def fix_a_instruction(line):
+        parsed_line = re.match(
+            r"(\W+)(xor|cp|sub|add|and|or)[ \t]+([0-9a-zA-Z+\-()]+)(?:(?:,[ \t]*)?([0-9a-zA-Z+\-()]+))?",
+            line,
+        )
         if parsed_line is None:
             return line
         space = parsed_line.group(1)
-        op1 = parsed_line.group(2)
-        op2 = parsed_line.group(3)
-        if op2 is None:  # 'add n' is not valid syntax for GAS
-            return f"{space}add a, {op1}\n"
+        cmd = parsed_line.group(2)
+        op1 = parsed_line.group(3)
+        op2 = parsed_line.group(4)
+        if op2 is not None and op1 == "a":  # 'xor a, ..' is not valid syntax for GAS
+            return f"{space}xor {op2}\n"
         else:
             return line
 
@@ -69,16 +73,18 @@ class SCCZ80Converter:
                 continue
             if "z80_crt0.hdr" in line:
                 continue
-            if line.startswith(";"):
-                continue
+            #if line.startswith(";"):
+            #    continue
             if "SECTION" in line:
                 patched_line = self.replace_section(line)
-            elif line.startswith("."):
-                patched_line = self.rename_symbol(line)
-            elif "add" in line:
-                patched_line = self.fix_add_instruction(line)
             else:
                 patched_line = line
+            #elif line.startswith("."):
+            #    patched_line = self.rename_symbol(line)
+            #else:
+            #    patched_line = self.fix_a_instruction(line)
+            if patched_line is None:
+                continue
             self.dest_lines.append(patched_line)
         self.write_dest()
 

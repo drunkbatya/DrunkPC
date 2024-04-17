@@ -36,7 +36,7 @@ terminal_newline:
 ;   None
 ; C prototype:
 ;   void terminal_putchar(unsigned char c);
-terminal_putchar:
+_terminal_putchar:
     push af  ; storing af
     push ix  ; storing ix
     push hl  ; storing hl
@@ -70,10 +70,5 @@ terminal_putchar:
     pop ix  ; restoring ix
     pop af  ; restoring af
 
-    exx  ; exchanging register pairs with they shadow
-    pop hl  ; return address
-    pop bc  ; removing arg1
-    push hl  ; return address
-    exx  ; restoring registers
     ret
 

@@ -6,7 +6,7 @@ $(BUILDDIR)/%.o: %.c $(MAKE_FILES) | $(BUILDDIR)
 	@echo "\tCC\t" $<
 	@$(CC) $(CFLAGS) $< -o "$(dirname $@)$(basename $@).asm"
 	@$(ZCC_TO_GAS) "$(dirname $@)$(basename $@).asm" "$(dirname $@)$(basename $@)_patched.asm"
-	@$(AS) $(ASMFLAGS) "$(dirname $@)$(basename $@)_patched.asm" -o $@
+	@$(AS) $(ASMCFLAGS) "$(dirname $@)$(basename $@)_patched.asm" -o $@
 
 $(BUILDDIR)/$(TARGET).elf: $(OBJECTS) $(MAKE_FILES)
 	@echo "\tLD\t" $@

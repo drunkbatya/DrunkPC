@@ -8,10 +8,9 @@ TERMINAL_WIDTH = TERMINAL_DISPLAY_WIDTH / TERMINAL_CHAR_WIDTH
 TERMINAL_HEIGHT = TERMINAL_DISPLAY_HEIGHT / TERMINAL_CHAR_HEIGHT
 
 ; functions
-.global terminal_init
+.global _terminal_init
 .global terminal_reset
-.global terminal_putchar
-.global terminal_putstr
+.global _terminal_putchar
 .global terminal_cursor_right
 .global terminal_cursor_newline
 .global terminal_view_area_scroll_down

@@ -30,6 +30,18 @@ flash: $(BUILDDIR)/$(TARGET).bin
 	@echo "\tFLASH\t" $(BUILDDIR)/$(TARGET).bin
 	@minipro --device "AT28C256" --write $(BUILDDIR)/$(TARGET).bin -s
 
+.PHONY: lint
+lint:
+	find . -type f \( -name "*.c" -o -name "*.h" \) \
+		\( -path "./lib/*" -o -path "./applications/*" -o -path "./src/*" \) \
+		| xargs clang-format --Werror --style=file -i --dry-run
+
+.PHONY: format
+format:
+	find . -type f \( -name "*.c" -o -name "*.h" \) \
+		\( -path "./lib/*" -o -path "./applications/*" -o -path "./src/*" \) \
+		| xargs clang-format --Werror --style=file -i
+
 .PHONY: clean
 clean:
 	-rm -rf $(BUILDDIR)
