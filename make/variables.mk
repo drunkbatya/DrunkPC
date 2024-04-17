@@ -1,10 +1,11 @@
 BUILDDIR = build
 TARGET = firmware
 
-INCLUDE = -Isystem
+INCLUDE = -Isystem -Ilib/stdlib
 
 ASM_SOURCES += $(shell find system -type f -name "*.s")
 ASM_SOURCES += $(shell find applications -type f -name "*.s")
+ASM_SOURCES += $(shell find lib -type f -name "*.s")
 
 OBJECTS = $(addprefix $(BUILDDIR)/, $(ASM_SOURCES:.s=.o))
 

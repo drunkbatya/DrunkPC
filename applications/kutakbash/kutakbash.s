@@ -12,9 +12,9 @@ kutakbash_main:
     kutakbash_main_loop:
         ld hl, kutakbash_prompt  ; printing prompt first
         push hl
-        #call terminal_putstr
+        call terminal_putstr
 
-        #call terminal_get_input_string  ; awaiting input string
+        call terminal_get_input_string  ; awaiting input string
         pop hl  ; return value
         ld a, (hl)  ; loading first char
         or a  ; ; if empty string?
@@ -29,14 +29,14 @@ kutakbash_main:
         ; if unknown command
         ld de, kutakbash_no_such_file_header  ; printing error header
         push de
-        #call terminal_putstr
+        call terminal_putstr
 
         push hl  ; printing user input buffer value
-        #call terminal_putstr
+        call terminal_putstr
 
         ld de, kutakbash_no_such_file_msg  ; printing error
         push de
-        #call terminal_putstr
+        call terminal_putstr
 
         jr kutakbash_main_loop  ; loop
 
@@ -48,8 +48,8 @@ kutakbash_main:
 .section .rodata
 
 kutakbash_prompt:
-    .asciz "KutakBash $ "
+    .asciz ":-> "
 kutakbash_no_such_file_header:
-    .asciz "Error: "
+    .asciz "KutakBash: '"
 kutakbash_no_such_file_msg:
-    .asciz ": No such file or directory\n"
+    .asciz "': unknown instruction\n"

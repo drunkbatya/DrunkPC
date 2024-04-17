@@ -15,7 +15,7 @@ main:
     push hl
     call terminal_putstr
 
-    ;call kutakbash_main
+    call kutakbash_main
 
     halt
 
