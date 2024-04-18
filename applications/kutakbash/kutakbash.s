@@ -1,6 +1,6 @@
 .include "applications/kutakbash/kutakbash.inc"
-.include "terminal/terminal.inc"
 .include "keyboard/keyboard.inc"
+.include "string/string.inc"
 
 .section .text
 
@@ -12,16 +12,21 @@ kutakbash_main:
     kutakbash_main_loop:
         ld hl, kutakbash_prompt  ; printing prompt first
         push hl
-        call terminal_putstr
+        call putstr
 
-        call terminal_get_input_string  ; awaiting input string
+        call kutakbash_get_input_string  ; awaiting input string
         pop hl  ; return value
-        ld a, (hl)  ; loading first char
-        or a  ; ; if empty string?
-        jr z, kutakbash_main_loop  ; skipping
+
+        push hl  ; 1st arg of strisspaceorempty func - input string
+        call strisspaceorempty
+        pop de  ; strisspaceorempty return value
+        ld a, e  ; loading strisspaceorempty return value
+        or a  ; if empty or only space-d string?
+        jr nz, kutakbash_main_loop  ; skipping if true
 
         ; check signals?
 
+        ;push hl  ; pushing input buffer
         ; strtok?
 
         ; parse command
@@ -29,14 +34,14 @@ kutakbash_main:
         ; if unknown command
         ld de, kutakbash_no_such_file_header  ; printing error header
         push de
-        call terminal_putstr
+        call putstr
 
         push hl  ; printing user input buffer value
-        call terminal_putstr
+        call putstr
 
         ld de, kutakbash_no_such_file_msg  ; printing error
         push de
-        call terminal_putstr
+        call putstr
 
         jr kutakbash_main_loop  ; loop
 

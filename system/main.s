@@ -1,5 +1,6 @@
 .include "main.inc"
 .include "terminal/terminal.inc"
+.include "string/string.inc"
 .include "applications/kutakbash/kutakbash.inc"
 
 .section .text
@@ -9,11 +10,11 @@ main:
 
     ld hl, system_welcome_str
     push hl
-    call terminal_putstr
+    call putstr
 
     ld hl, system_test_str
     push hl
-    call terminal_putstr
+    call putstr
 
     call kutakbash_main
 
@@ -26,4 +27,3 @@ system_welcome_str:
 
 system_test_str:
     .asciz "Test.\nTest..\nTest...\nTest....\nTest.....\n"
-   ;.asciz "Test.\nTest..\nTest...\nTest....\nTest.....\nTest......\n"

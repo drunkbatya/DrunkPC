@@ -1,4 +1,4 @@
-$(BUILDDIR)/%.o: %.s $(MAKE_FILES) | $(BUILDDIR)
+$(BUILDDIR)/%.o: %.s $(ASM_INCLUDES) $(MAKE_FILES) | $(BUILDDIR)
 	@echo "\tASM\t" $<
 	@$(AS) $(ASMFLAGS) $< -o $@
 

@@ -1,4 +1,4 @@
-.include "terminal/terminal.inc"
+.include "string/string.inc"
 
 .section .text
 
@@ -9,8 +9,8 @@
 ; Return:
 ;   None
 ; C prototype:
-;   void terminal_putstr(unsigned char* str);
-terminal_putstr:
+;   void putstr(unsigned char* str);
+putstr:
     push af  ; storing af
     push ix  ; storing ix
     push hl  ; storing hl
@@ -21,20 +21,20 @@ terminal_putstr:
 
     ld l, (ix + 0)  ; loading string pointer
     ld h, (ix + 1)  ; loading string pointer
-    ld b, 0  ; dummy byte to call terminal_putchar function and pass a char throught bc reg pair
-    terminal_putstr_loop:
+    ld b, 0  ; dummy byte to call putchar function and pass a char throught bc reg pair
+    putstr_loop:
         ld a, (hl)  ; loading byte to draw
         or a  ; check if zero (null-terminator)
-        jr z, terminal_putstr_loop_end
+        jr z, putstr_loop_end
 
         ld c, a  ; char to draw
-        push bc  ; first argument of terminal_putchar function (char to draw)
+        push bc  ; first argument of putchar function (char to draw)
 
-        call terminal_putchar
+        call putchar
 
         inc hl
-        jr terminal_putstr_loop
-    terminal_putstr_loop_end:
+        jr putstr_loop
+    putstr_loop_end:
     pop bc  ; restoring bc
     pop hl  ; restoring hl
     pop ix  ; restoring ix

@@ -1,32 +1,9 @@
+.include "string/string.inc"
 .include "terminal/terminal.inc"
 .include "drivers/ra6963/ra6963.inc"
 .include "hardware/io.inc"
 
 .section .text
-
-; About:
-;   Private function: processing new line
-terminal_newline:
-    
-#    push af  ; storing a
-#
-#    ld a, d  ; loading y to a (due to add instruction limmitations)
-#    add a, TERMINAL_LINE_HEIGHT  ; max char height
-#    ld e, 0  ; loading init x value
-#    ld d, a  ; loading new y to d back (due to add instruction limmitations)
-#
-#    ld a, d  ; loading y to a
-#    ;cp TERMINAL_DISPLAY_HEIGHT - TERMINAL_LINE_HEIGHT  ; comparing 'y' + one line with the visible area
-#    jr z, terminal_newline_end  ; if y + one line == max visible area line, skipping
-#    jr c, terminal_newline_end  ; if y + one line < visible area, skipping
-#
-#    push de  ; pushing current coordinates
-#    call terminal_process_newline
-#    pop de  ; returning new ccordinates
-#
-#    terminal_newline_end:
-#    pop af  ; restoring a
-    ret
 
 ; About:
 ;   Puts a char to the terminal
@@ -35,8 +12,8 @@ terminal_newline:
 ; Return:
 ;   None
 ; C prototype:
-;   void terminal_putchar(unsigned char c);
-terminal_putchar:
+;   void putchar(unsigned char c);
+putchar:
     push af  ; storing af
     push ix  ; storing ix
     push hl  ; storing hl
@@ -49,11 +26,11 @@ terminal_putchar:
     ld a, (ix + 0)  ; loading char to draw
     cp 0x0a  ; if new line char, i don't know how to set '\n' char here
     call z, terminal_cursor_newline  ; if char == '\n'
-    jr z, terminal_putchar_end  ; if char == '\n'
+    jr z, putchar_end  ; if char == '\n'
 
     ld a, (ix + 0)  ; loading char to draw
     sub RA6963_FONT_OFFSET  ; subtracting font offset from the char code, sets C if borrow
-    jr c, terminal_putchar_end  ; returning if char code < RA6963_FONT_OFFSET
+    jr c, putchar_end  ; returning if char code < RA6963_FONT_OFFSET
 
     call ra6963_await_cmd_or_data
     out (IO_LCD_DATA_ADDR), a  ; writing a char
@@ -63,7 +40,7 @@ terminal_putchar:
 
     call terminal_cursor_right
 
-    terminal_putchar_end:
+    putchar_end:
     pop bc  ; restoring bc
     pop de  ; restoring de
     pop hl  ; restoring hl
