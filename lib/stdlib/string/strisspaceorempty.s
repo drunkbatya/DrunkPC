@@ -25,7 +25,7 @@ strisspaceorempty:
         jr z, strisspaceorempty_loop_end_true  ; if we reached EOS before catch any char
 
         ld c, ' '  ; space
-        or a  ; char is a space?
+        cp c  ; char is a space?
         jr nz, strisspaceorempty_loop_end_false  ; if current char not a space and not null-terminator, returning false
 
         inc hl
