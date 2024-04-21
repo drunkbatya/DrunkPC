@@ -1,5 +1,7 @@
 ENTRY(reset_handler)
 
+_min_stack_size = 5K;
+
 MEMORY {
     FLASH (rx) : ORIGIN = 0x0000, LENGTH = 16K
     SRAM (xrw) : ORIGIN = 0x4000, LENGTH = 48K
@@ -40,4 +42,12 @@ SECTIONS {
         _ebss = .;
     } >SRAM
     _bss_size = SIZEOF(.bss);
+
+    ._heap(DSECT): {
+        _sheap = .;
+        . = ORIGIN(SRAM) + LENGTH(SRAM) - _min_stack_size;
+        _eheap = .;
+        . = . + _min_stack_size;
+    } >SRAM
+    _heap_size = SIZEOF(._heap);
 }

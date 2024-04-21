@@ -8,7 +8,7 @@ ra6963_clear:
     ld hl, 0  ; cleared screen value
     push hl  ; third arg of the ra6963_memset
 
-    ld hl, 1920  ; framebuffer size
+    ld hl, RA6963_DISPLAY_WIDTH_BYTES * RA6963_DISPLAY_HEIGHT_BYTES  ; framebuffer size
     push hl  ; second  arg of the ra6963_memset
 
     ld hl, 0  ; start address
