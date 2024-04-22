@@ -7,7 +7,7 @@
 ; Return:
 ;   void* ptr - pointer to the allocated memmory if allocation success,
 ;       pointer to the highest heap address if size == 0,
-;       pointer to 0 (NULL) if allocation failed.
+;       pointer with value 0 (NULL) if allocation failed.
 ; C Prototype:
 ;void* sbrk(uint16_t size);
 sbrk:
