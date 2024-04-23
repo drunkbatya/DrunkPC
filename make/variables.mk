@@ -1,7 +1,7 @@
 BUILDDIR = build
 TARGET = firmware
 
-INCLUDE = -Isystem -Ilib/stdlib
+INCLUDE = -Isystem -Ilib/stdlib -Ilib
 
 ASM_SOURCES += $(shell find . -type f -name "*.s")
 ASM_INCLUDES += $(shell find . -type f -name "*.inc")

@@ -5,11 +5,11 @@
 ; About:
 ;   Puts a null-terminated string to the terminal
 ; Args:
-;   unsigned char* str - char to draw
+;   const unsigned char* str - string to draw
 ; Return:
 ;   None
 ; C prototype:
-;   void putstr(unsigned char* str);
+;   void putstr(const unsigned char* str);
 putstr:
     push af  ; storing af
     push ix  ; storing ix
