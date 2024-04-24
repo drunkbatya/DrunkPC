@@ -4,5 +4,6 @@
 .global putchar
 .global getchar
 .global strisspaceorempty
+.global strrev
 
 ; vim: set ft=asm:
