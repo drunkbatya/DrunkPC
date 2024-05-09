@@ -1,49 +1,50 @@
 .include "string/string.inc"
+.include "stdlib/core/core.inc"
 
 .section .text
 
 ; About:
-;   Puts a null-terminated string to the terminal
+;   Writes a character representation of unsigned 16-bit integer to terminal
 ; Args:
-;   const unsigned char* str - string to draw
+;   uint16_t number - number to write
+;   uint8_t base - number base
 ; Return:
 ;   None
 ; C prototype:
-;   void putnbr_16(const unsigned char* str);
+;   void putnbr(uint16_t number, uint8_t base);
 putnbr:
-    push af  ; storing af
     push ix  ; storing ix
     push hl  ; storing hl
-    push bc  ; storing bc
 
-    ld ix, 10  ; there is no way to set load sp value to ix, skipping pushed 3 reg pairs and return address
+    ld ix, 6  ; there is no way to set load sp value to ix, skipping pushed 2 reg pairs and return address
     add ix, sp  ; loading sp value to ix
 
+    ld l, (ix + 2)  ; loading base
+    ld h, 0  ; base type uint8_t
+    push hl  ; 3rd arg of itoa - base
+    ld hl, putnbr_buffer
+    push hl  ; 2nd arg of itoa - buffer
     ld l, (ix + 0)  ; loading string pointer
     ld h, (ix + 1)  ; loading string pointer
-    ld b, 0  ; dummy byte to call putchar function and pass a char throught bc reg pair
-    putnbr_loop:
-        ld a, (hl)  ; loading byte to draw
-        or a  ; check if zero (null-terminator)
-        jr z, putnbr_loop_end
+    push hl  ; 1st arg of itoa - number
+    call itoa
 
-        ld c, a  ; char to draw
-        push bc  ; first argument of putchar function (char to draw)
+    ld hl, putnbr_buffer
+    call putstr
 
-        call putchar
-
-        inc hl
-        jr putnbr_loop
-    putnbr_loop_end:
-    pop bc  ; restoring bc
     pop hl  ; restoring hl
     pop ix  ; restoring ix
-    pop af  ; restoring af
 
     exx  ; exchanging register pairs with they shadow
     pop hl  ; return address
     pop bc  ; removing arg1
+    pop bc  ; removing arg2
     push hl  ; return address
     exx  ; restoring registers
     ret
 
+
+.section .bss
+
+putnbr_buffer:
+    .skip 6  ; max len 65536 + '\0'
