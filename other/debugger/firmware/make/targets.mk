@@ -1,4 +1,4 @@
-all: $(BUILDDIR)/$(TARGET).elf $(BUILDDIR)/$(TARGET).bin
+all: $(BUILDDIR)/$(TARGET).elf $(BUILDDIR)/$(TARGET).bin $(BUILDDIR)/$(TARGET).hex
 
 .PHONY: flash
 flash: all

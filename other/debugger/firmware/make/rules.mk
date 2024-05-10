@@ -11,3 +11,7 @@ $(BUILDDIR)/$(TARGET).elf: $(OBJECTS) $(MAKE_FILES)
 $(BUILDDIR)/%.bin: $(BUILDDIR)/%.elf | $(BUILDDIR)
 	@echo "\tBIN\t" $@
 	@$(BIN) $< $@
+
+$(BUILDDIR)/%.hex: $(BUILDDIR)/%.elf | $(BUILDDIR)
+	@echo "\tHEX\t" $@
+	@$(HEX) $< $@
