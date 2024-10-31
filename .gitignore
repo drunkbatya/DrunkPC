@@ -1,6 +1,6 @@
 .DS_Store
 build/
-sandbox/
+.sandbox/
 misc/
 *.swp
 *.swo
