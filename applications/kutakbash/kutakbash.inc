@@ -6,6 +6,6 @@ KUTAKBASH_INPUT_STRING_SIZE = 101 ; bytes
 .global terminal_input_string
 
 ; variables
-.global kutakbash_input_string
+.global kutakbash_input_string_buffer
 
 ; vim: set ft=asm:

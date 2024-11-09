@@ -21,10 +21,10 @@ kutakbash_get_input_string:
     ld ix, 12  ; there is no way to set load sp value to ix, skipping pushed 5 reg pairs and the return address
     add ix, sp  ; loading sp value to ix
 
-    ld hl, kutakbash_input_string  ; resseting input buffer
+    ld hl, kutakbash_input_string_buffer  ; resseting input buffer
     ld (hl), 0  ; setting null-terminator to position 0
 
-    ld de, kutakbash_input_string  ; buffer add to
+    ld de, kutakbash_input_string_buffer  ; buffer add to
 
     kutakbash_get_input_string_loop:
         call keyboard_get_key  ; reading keyboard
@@ -49,6 +49,10 @@ kutakbash_get_input_string:
         ld h, KBD_RIGHT  ; right arrow key
         cp h  ; if current char (in a) is a right arrow key?
         jr z, kutakbash_get_input_string_right_arrow
+        ; check SIGINT
+        ld h, KBD_CTRL_C  ; Control+C
+        cp h  ; if current char (in a) is a Control+C?
+        jr z, kutakbash_get_input_string_control_c
         ; another printable char, adding to the input buffer
         push hl  ; arg2 of the append_to_string function, printable char in l
         push de  ; arg1 of the append_to_string function, pointer to the dst string
@@ -68,13 +72,24 @@ kutakbash_get_input_string:
     kutakbash_get_input_string_right_arrow:
     call terminal_cursor_right
     jr kutakbash_get_input_string_loop  ; going back to loop
+    kutakbash_get_input_string_control_c:
+    ld hl, kutakbash_input_control_c_str  ; loading ctr+c mark str
+    push hl  ; 1arg of putstr function
+    call putstr
+    jr kutakbash_get_input_string_return_false
     kutakbash_get_input_string_new_line:
+    ld l, 0x0A  ; new line char
     push hl  ; new line char in l
     call putchar  ; print new line character directly without adding it to the buffer
-    kutakbash_get_input_string_loop_end:
-    ld (ix + 0), e  ; input buffer ptr low byte
-    ld (ix + 1), d  ; input buffer ptr high byte
 
+    kutakbash_get_input_string_return_true:
+    ld (ix + 0), 1  ; true
+    jr kutakbash_get_input_string_end
+
+    kutakbash_get_input_string_return_false:
+    ld (ix + 0), 0  ; false
+
+    kutakbash_get_input_string_end:
     pop bc  ; restoring bc
     pop de  ; restoring de
     pop hl  ; restoring hl
@@ -84,5 +99,10 @@ kutakbash_get_input_string:
 
 .section .bss
 
-kutakbash_input_string:
+kutakbash_input_string_buffer:
     .skip KUTAKBASH_INPUT_STRING_SIZE
+
+.section .rodata
+
+kutakbash_input_control_c_str:
+    .asciz "^C\n"

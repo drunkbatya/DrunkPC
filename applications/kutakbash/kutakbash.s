@@ -15,7 +15,12 @@ kutakbash_main:
         call putstr
 
         call kutakbash_get_input_string  ; awaiting input string
-        pop hl  ; return value
+        pop de  ; return value (0 - false, if error; 1 - true, if success)
+        ld a, e  ; loading kutakbash_get_input_string return value
+        or a  ; if any error (or SIGINT)?
+        jr z, kutakbash_main_loop  ; skipping if false
+
+        ld hl, kutakbash_input_string_buffer  ; filled input buffer
 
         push hl  ; 1st arg of strisspaceorempty func - input string
         call strisspaceorempty

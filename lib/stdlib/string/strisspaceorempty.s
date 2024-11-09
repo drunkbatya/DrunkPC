@@ -31,11 +31,11 @@ strisspaceorempty:
         inc hl
         jr strisspaceorempty_loop
     strisspaceorempty_loop_end_true:
-    ld (ix + 0), 1
+    ld (ix + 0), 1  ; true
     jr strisspaceorempty_end
 
     strisspaceorempty_loop_end_false:
-    ld (ix + 0), 0
+    ld (ix + 0), 0  ; false
 
     strisspaceorempty_end:
     ld (ix + 1), 0  ; dummy byte

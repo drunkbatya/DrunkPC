@@ -2,14 +2,11 @@
 
 .section .rodata
 
-; This is only ASCII-codes, we can access any key(s) directly
-;   by setting row and scanning column.
-
 keyboard_matrix_map:
     ; [ESC] [1] [2] [3] [4] [5] [6] [7]
     .byte 0,  '1', '2', '3', '4', '5', '6', '7'
     ; [8] [9] [0] [-] [=] [backspace] [`] [q]
-    .byte '8', '9', '0', '-', '=', 8  , '`', 'q'
+    .byte '8', '9', '0', '-', '=', KBD_BACKSPACE , '`', 'q'
     ; [w] [e] [r] [t] [y] [u] [i] [o]
     .byte 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o'
     ; [p] [[] []] [\] [TAB] [a] [s] [d]
@@ -27,7 +24,7 @@ keyboard_matrix_map_shift:
     ; [ESC] [!] [@] [#] [$] [%] [^] [&]
     .byte 0,  '!', '@', '#', '$', '%', '^', '&'
     ; [*] [(] [)] [_] [+] [backspace] [~] [Q]
-    .byte '*', '(', ')', '_', '+', 8  , '~', 'Q'
+    .byte '*', '(', ')', '_', '+', KBD_BACKSPACE, '~', 'Q'
     ; [W] [E] [R] [T] [Y] [U] [I] [O]
     .byte 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O'
     ; [P] [{] [}] [|] [TAB] [A] [S] [D]
@@ -40,3 +37,21 @@ keyboard_matrix_map_shift:
     .byte 'M', '<', '>', '?', 0  , 0  , 0  , ' '
     ; [LEFT] [DOWN] [RIGHT] and 5 dummy bytes
     .byte 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0
+
+keyboard_matrix_map_control:
+    ; [ESC] [1] [2] [3] [4] [5] [6] [7]
+    .byte 0,  0,  0,  0,  0,  0,  0,  0
+    ; [8] [9] [0] [-] [=] [backspace] [`] [q]
+    .byte 0,  0,  0,  0,  0,  KBD_BACKSPACE,  0,  0
+    ; [w] [e] [r] [t] [y] [u] [i] [o]
+    .byte 0,  0,  0,  0,  0,  0,  0,  0
+    ; [p] [[] []] [\] [TAB] [a] [s] [d]
+    .byte 0,  0,  0,  0,  0,  0,  0,  0
+    ; [f] [g] [h] [j] [k] [l] [;] [']
+    .byte 0,  0,  0,  0,  0,  0,  0,  0
+    ; [return] [shift] [z] [x] [c] [v] [b] [n]
+    .byte   10,      0,  0,  0, KBD_CTRL_C,  0,  0,  0
+    ; [m] [,] [.] [/] [UP] [CONTROL] [OPTION] [SPACE]
+    .byte 0,  0,  0,  0,  0,  0,  0,  0
+    ; [LEFT] [DOWN] [RIGHT] and 5 dummy bytes
+    .byte 0,  0,  0,  0,  0,  0,  0,  0

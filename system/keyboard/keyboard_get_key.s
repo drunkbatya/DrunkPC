@@ -2,7 +2,9 @@
 .include "keyboard/keyboard.inc"
 
 KEYBOARD_SHIFT_ROW = 0x20  ; row 5
+KEYBOARD_CONTROL_ROW = 0x40  ; row 6
 KEYBOARD_SHIFT_BIT = 1  ; bit 1
+KEYBOARD_CONTROL_BIT = 5  ; bit 5
 
 KEYBOARD_SCAN_READ_DELAY_NOP = 6  ; in 'nop'`s
 
@@ -53,11 +55,21 @@ keyboard_get_key:
     bit KEYBOARD_SHIFT_BIT, a  ; if shift pressed?
     jr nz, keyboard_get_key_shift_pressed
 
+    keyboard_get_key_check_control:
+    ld a, KEYBOARD_CONTROL_ROW  ; setting row 5
+    call keyboard_read_column  ; arg in a, return in a
+    bit KEYBOARD_CONTROL_BIT, a  ; if shift pressed?
+    jr nz, keyboard_get_key_control_pressed
+
     ld hl, keyboard_matrix_map  ; loading keyboard_matrix_map ptr
     jr keyboard_get_key_row_start
 
     keyboard_get_key_shift_pressed:
     ld hl, keyboard_matrix_map_shift
+    jr keyboard_get_key_row_start
+
+    keyboard_get_key_control_pressed:
+    ld hl, keyboard_matrix_map_control
 
     keyboard_get_key_row_start:
     ld b, 1  ; hardware row bitmask
