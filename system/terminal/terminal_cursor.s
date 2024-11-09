@@ -66,6 +66,33 @@ terminal_cursor_right_end:
     ret
 
 terminal_cursor_left:
+    push af  ; storing af
+    push hl  ; storing hl
+
+    ld hl, (terminal_cursor_coordinates)  ; loading y, x
+    ld a, l  ; loading x to a
+    or a  ; is it zero
+    jr z, terminal_cursor_left_line_up  ; if x=0 and we need to jump line up
+    dec l  ; decrementing x
+    jr terminal_cursor_left_end  ; all done
+
+    terminal_cursor_left_line_up:
+    ld a, h  ; loading y to a
+    or a  ; is it zero
+    jr z, terminal_cursor_left_end_do_nothing  ; if we'r now in zero position, do nothing
+    dec h  ; going one line up
+    ld a, -1  ; loading (TERMINAL_WIDTH - 1) to x
+    add a, TERMINAL_WIDTH  ; loading (TERMINAL_WIDTH - 1) to x
+    ld l, a  ; loading x back to l
+
+    terminal_cursor_left_end:
+    ld (terminal_cursor_coordinates), hl  ; writing modified coordinates back
+    push hl  ; 1st arg of the ra6963_set_cursor_pointer
+    call ra6963_set_cursor_pointer
+
+    terminal_cursor_left_end_do_nothing:
+    pop hl  ; restoring hl
+    pop af  ; restoring af
     ret
 
 .section .bss

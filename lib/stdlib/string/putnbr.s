@@ -24,12 +24,13 @@ putnbr:
     push hl  ; 3rd arg of itoa - base
     ld hl, putnbr_buffer
     push hl  ; 2nd arg of itoa - buffer
-    ld l, (ix + 0)  ; loading string pointer
-    ld h, (ix + 1)  ; loading string pointer
+    ld l, (ix + 0)  ; loading number low byte
+    ld h, (ix + 1)  ; loading number high byte
     push hl  ; 1st arg of itoa - number
     call itoa
 
     ld hl, putnbr_buffer
+    push hl  ; first argument of the putstr function
     call putstr
 
     pop hl  ; restoring hl

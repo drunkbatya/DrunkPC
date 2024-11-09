@@ -13,12 +13,6 @@ main:
     push hl
     call putstr
 
-    ;ld hl, system_test_str
-    ;push hl
-    ;call strrev
-    ;push hl
-    ;call putstr
-
     ld hl, 10
     push hl
     ld hl, system_welcome_str
@@ -37,11 +31,38 @@ main:
     push hl
     ld hl, system_welcome_str
     push hl
-    call itoa
+    call putnbr
 
     ld hl, 0x0A
     push hl
     call putchar
+
+    ;call compactflash_init
+    ;pop hl
+
+    ;call compactflash_set_lba_addr
+    ;call compactflash_read_data
+    ;pop hl
+    ;ld a, l
+    ;or a
+    ;jr z, cf_read_fail
+;cf_read_done:
+    ;ld hl, test_str1
+    ;jr cf_read_report
+;cf_read_fail:
+    ;ld hl, test_str0
+;cf_read_report:
+    ;push hl
+    ;call putstr
+
+    ;ld hl, compactflash_sector_buf
+    ;ld de, 54
+    ;add hl, de
+    ;push hl  ; storing ptr
+    ;ld de, 10
+    ;add hl, de
+    ;ld (hl), 0
+    ;call putstr
 
     call kutakbash_main
 
@@ -57,3 +78,9 @@ system_test_str:
 
 hex_str:
     .asciz "0x"
+
+test_str0:
+    .asciz "Compact Flash sector 0 read fail!!\n"
+test_str1:
+    .asciz "Compact Flash sector 0 read done!\n"
+

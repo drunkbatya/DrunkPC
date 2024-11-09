@@ -21,7 +21,7 @@ keyboard_matrix_map:
     ; [m] [,] [.] [/] [UP] [CONTROL] [OPTION] [SPACE]
     .byte 'm', ',', '.', '/', 0  , 0  , 0  , ' '
     ; [LEFT] [DOWN] [RIGHT] and 5 dummy bytes
-    .byte 0  , 0  , 0  , 0  , 0  , 0  , 0  , 0
+    .byte KBD_LEFT , 0 , KBD_RIGHT  , 0  , 0  , 0  , 0  , 0
 
 keyboard_matrix_map_shift:
     ; [ESC] [!] [@] [#] [$] [%] [^] [&]

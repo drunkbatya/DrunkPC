@@ -1,6 +1,7 @@
 .include "terminal/terminal.inc"
 .include "applications/kutakbash/kutakbash.inc"
 .include "string/string.inc"
+.include "keyboard/keyboard_codes.inc"
 
 .section .text
 
@@ -40,6 +41,14 @@ kutakbash_get_input_string:
         ld h, 0x08  ; backspace char
         cp h  ; if current char (in a) is a backspace?
         jr z, kutakbash_get_input_string_backspace
+        ; check left arrow
+        ld h, KBD_LEFT  ; left arrow key
+        cp h  ; if current char (in a) is a left arrow key?
+        jr z, kutakbash_get_input_string_left_arrow
+        ; check right arrow
+        ld h, KBD_RIGHT  ; right arrow key
+        cp h  ; if current char (in a) is a right arrow key?
+        jr z, kutakbash_get_input_string_right_arrow
         ; another printable char, adding to the input buffer
         push hl  ; arg2 of the append_to_string function, printable char in l
         push de  ; arg1 of the append_to_string function, pointer to the dst string
@@ -50,7 +59,14 @@ kutakbash_get_input_string:
         ; redraw string
         jr kutakbash_get_input_string_loop
     kutakbash_get_input_string_backspace:
+    call terminal_cursor_left
     ; process backspace, remove a char from the input buffer
+    jr kutakbash_get_input_string_loop  ; going back to loop
+    kutakbash_get_input_string_left_arrow:
+    call terminal_cursor_left
+    jr kutakbash_get_input_string_loop  ; going back to loop
+    kutakbash_get_input_string_right_arrow:
+    call terminal_cursor_right
     jr kutakbash_get_input_string_loop  ; going back to loop
     kutakbash_get_input_string_new_line:
     push hl  ; new line char in l

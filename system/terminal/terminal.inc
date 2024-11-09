@@ -11,6 +11,7 @@ TERMINAL_HEIGHT = TERMINAL_DISPLAY_HEIGHT / TERMINAL_CHAR_HEIGHT
 .global terminal_init
 .global terminal_reset
 .global terminal_cursor_right
+.global terminal_cursor_left
 .global terminal_cursor_newline
 .global terminal_view_area_scroll_down
 
