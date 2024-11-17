@@ -1,8 +1,12 @@
+$(BUILDDIR)/%.s: %.tmpl $(TMPL_SOURCES) $(ASM_INCLUDES) $(MAKE_FILES) | $(BUILDDIR)
+	@echo "\tTMPL\t" $<
+	@$(TMPL_ENVS) $(ENVSUBST) < $< > $@
+
 $(BUILDDIR)/%.o: %.s $(ASM_INCLUDES) $(MAKE_FILES) | $(BUILDDIR)
 	@echo "\tASM\t" $<
 	@$(AS) $(ASMFLAGS) $< -o $@
 
-$(BUILDDIR)/$(TARGET).elf: $(OBJECTS) $(MAKE_FILES)
+$(BUILDDIR)/$(TARGET).elf: $(TEMPLATES) $(OBJECTS) $(MAKE_FILES)
 	@echo "\tLD\t" $@
 	@$(LD) $(LDFLAGS) $(OBJECTS) -o $@
 	@echo "\tSIZE\t" $@
@@ -11,4 +15,3 @@ $(BUILDDIR)/$(TARGET).elf: $(OBJECTS) $(MAKE_FILES)
 $(BUILDDIR)/%.bin: $(BUILDDIR)/%.elf | $(BUILDDIR)
 	@echo "\tBIN\t" $@
 	@$(BIN) $< $@
-

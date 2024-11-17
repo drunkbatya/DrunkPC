@@ -1,6 +1,7 @@
 .include "applications/kutakbash/kutakbash.inc"
 .include "keyboard/keyboard.inc"
 .include "string/string.inc"
+.include "version/version.inc"
 
 .section .text
 
@@ -8,6 +9,18 @@ kutakbash_main:
     push hl
     push de
     push af
+
+    ; temp
+    ld hl, test1
+    push hl
+    call putstr
+    ld hl, version_git_hash
+    push hl
+    call putstr
+    ld l, 0x0A
+    push hl
+    call putchar
+    ; temp
 
     kutakbash_main_loop:
         ld hl, kutakbash_prompt  ; printing prompt first
@@ -62,4 +75,8 @@ kutakbash_prompt:
 kutakbash_no_such_file_header:
     .asciz "KutakBash: '"
 kutakbash_no_such_file_msg:
-    .asciz "': unknown instruction\n"
+    .asciz "': unknown command\n"
+
+test1:
+    .asciz "Git hash: "
+

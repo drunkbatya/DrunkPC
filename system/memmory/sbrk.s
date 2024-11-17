@@ -1,7 +1,7 @@
 .include "string/string.inc"
 
 ; About:
-;   Return true if given string only cosists of space or empty
+;   Contol main heap size
 ; Args:
 ;   uint16_t size - size of memmory to allocate. Size 0 used to get highest heap address.
 ; Return:
@@ -9,7 +9,7 @@
 ;       pointer to the highest heap address if size == 0,
 ;       pointer with value 0 (NULL) if allocation failed.
 ; C Prototype:
-;void* sbrk(uint16_t size);
+;   void* sbrk(uint16_t size);
 sbrk:
     push af  ; storing af
     push ix  ; storing ix

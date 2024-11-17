@@ -1,3 +1,4 @@
+include make/git.mk
 include make/variables.mk
 include make/tools.mk
 include make/flags.mk

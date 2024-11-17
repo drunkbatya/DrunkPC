@@ -1,0 +1,17 @@
+.include "version/version.inc"
+
+.section .rodata
+
+version_git_hash:
+    .asciz $GIT_COMMIT
+
+version_git_branch:
+    .asciz $GIT_BRANCH
+
+version_git_build_date:
+    .asciz $BUILD_DATE
+
+version_git_tag:
+    .asciz $VERSION
+
+; vim: ft=asm
