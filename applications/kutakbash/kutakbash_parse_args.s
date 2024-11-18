@@ -21,6 +21,7 @@
 ;   void kutakbash_parse_args(void);
 kutakbash_parse_args:
     push hl  ; storing hl
+    push de  ; storing de
     push bc  ; storing bc
     push af  ; storing af
 
@@ -54,7 +55,7 @@ kutakbash_parse_args:
 
         ; saving current string ptr to current argv position
         push hl  ; storing user string current ptr
-        pop bc  ; loading str ptr to bc
+        pop bc  ; ld bc, hl, loading str ptr to bc
         push de  ; ld hl, de
         pop hl  ; loading a current kutakbash_argv addr to hl
         ld (hl), c  ; string low string address to kutakbash_argv
@@ -69,7 +70,7 @@ kutakbash_parse_args:
         kutakbash_parse_args_separator_found:
         ; patching original string, replace a separator to null-terminator
         ld a, 1  ; setting a separator mark
-        ld (kutakbash_parse_args_separator_mark), a  ; memorizing a current char
+        ld (kutakbash_parse_args_separator_mark), a  ; setting a separator mark
         ld (hl), 0  ; replace a separator to null-terminator
 
         kutakbash_parse_args_loop_next:
@@ -85,11 +86,12 @@ kutakbash_parse_args:
 
     pop af  ; restoring af
     pop bc  ; restoring bc
+    pop de  ; restoring de
     pop hl  ; restoring hl
     ret
 
 kutakbash_parse_args_reset:
-    ; resetting previous char
+    ; resetting separator mark
     ld a, 1
     ld (kutakbash_parse_args_separator_mark), a
 
@@ -121,7 +123,7 @@ kutakbash_argc:
 kutakbash_argv:  ; array with pointers to parsed substrings
     .skip KUTAKBASH_MAX_ARGS * 2 ; pointer size is a "word" (2 bytes)
 
-kutakbash_parse_args_separator_mark:  ; used for check what is current char means
+kutakbash_parse_args_separator_mark:  ; used for check what is the current char means
     .skip 1  ; one byte, TODO: replace to flag in stack
 
 .section .rodata

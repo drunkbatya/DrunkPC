@@ -14,8 +14,11 @@ test_app_main:
     push hl  ; storing hl
 
     ld a, (kutakbash_argc)  ; loading argc
+    or a  ; check if argc is 0
+    jr z, test_app_main_arg_loop_end
+
     ld b, a  ; loading arguments count to b reg for djnz instruction
-    ld de, kutakbash_argv
+    ld de, kutakbash_argv  ; loading ptr ot argv
 
     test_app_main_arg_loop:
         ld hl, test_app_main_msg_recieved_arg

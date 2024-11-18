@@ -35,15 +35,6 @@ kutakbash_main:
         or a  ; if any error (or SIGINT)?
         jr z, kutakbash_main_loop  ; skipping if false
 
-        ld hl, kutakbash_input_string_buffer  ; filled input buffer
-
-        push hl  ; 1st arg of strisspaceorempty func - input string
-        call strisspaceorempty
-        pop de  ; strisspaceorempty return value
-        ld a, e  ; loading strisspaceorempty return value
-        or a  ; if empty or only space-d string?
-        jr nz, kutakbash_main_loop  ; skipping if true
-
         call kutakbash_parse_args  ; assuming input string isn't empty
         ld a, (kutakbash_argc)  ; checking error (argc setted to 0 means parse error)
         or a  ; check error
