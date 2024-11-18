@@ -34,30 +34,23 @@ kutakbash_parse_args:
         jr z, kutakbash_parse_args_loop_end  ; returning if EOS
 
         cp KUTAKBASH_ARGS_SEPARATOR  ; check if current char is a separator
-        jr z, kutakbash_parse_args_separator_found  ; if separator just remember this and go next
+        jr z, kutakbash_parse_args_separator_found  ; if separator
 
-        ; not a separator
-        ld a, (kutakbash_parse_args_previous_char)  ; loading previous char (default is set to 0)
-        or a  ; check if previous char is absent
-        jr z, kutakbash_parse_args_new_word ; if current char is not a separator and is a first char
-        cp KUTAKBASH_ARGS_SEPARATOR  ; check if previous char was a separator
-        jr z, kutakbash_parse_args_new_word ; if current char is not a separator and
-            ; a previous char was not too, this means now we are inside word, just going next
-            ; if current char is not a separator and a previous char is a separator,
-            ; this means a new word started
-        jr kutakbash_parse_args_loop_next
-        kutakbash_parse_args_new_word:
+        ; current char is not a separator
+        ld a, (kutakbash_parse_args_separator_mark)  ; loading separator mark
+        or a  ; check if separator was already found
+        jr z, kutakbash_parse_args_loop_next ; if current char is not a separator and
+            ; a separator mark is set, this means now we are at the word start,
+            ; otherwise loop next
+        ld a, 0  ; resetting a separator mark
+        ld (kutakbash_parse_args_separator_mark), a  ; resetting separator mark
+
         ld a, (kutakbash_argc)  ; loading a current argc value
         cp KUTAKBASH_MAX_ARGS  ; does we have a space for one more arg?
         jr nc, kutakbash_parse_args_overflow  ; if KUTAKBASH_MAX_ARGS =< current argc value, raising an error
         ; if no error
         inc a  ; incrementing argc
         ld (kutakbash_argc), a  ; storing a new argc value
-
-        ; patching original string, replace a separator to null-terminator
-        dec hl  ; goint to the previous char
-        ld (hl), 0  ; setting null terminator to the previous position
-        inc hl  ; restoring a string ptr
 
         ; saving current string ptr to current argv position
         push hl  ; storing user string current ptr
@@ -73,17 +66,13 @@ kutakbash_parse_args:
         pop hl  ; restoring user string current ptr
         jr kutakbash_parse_args_loop_next
 
-        kutakbash_parse_args_separator_found:  ; TODO: rewrite!!!
+        kutakbash_parse_args_separator_found:
         ; patching original string, replace a separator to null-terminator
-        ld a, (hl)  ; loading a string byte
-        ld (kutakbash_parse_args_previous_char), a  ; memorizing a current char
+        ld a, 1  ; setting a separator mark
+        ld (kutakbash_parse_args_separator_mark), a  ; memorizing a current char
         ld (hl), 0  ; replace a separator to null-terminator
-        inc hl  ; itterating over the next byte
-        jr kutakbash_parse_args_loop  ; looping
 
         kutakbash_parse_args_loop_next:
-        ld a, (hl)  ; loading a string byte
-        ld (kutakbash_parse_args_previous_char), a  ; memorizing a current char
         inc hl  ; itterating over the next byte
         jr kutakbash_parse_args_loop  ; looping
     kutakbash_parse_args_overflow:
@@ -101,8 +90,8 @@ kutakbash_parse_args:
 
 kutakbash_parse_args_reset:
     ; resetting previous char
-    ld a, 0
-    ld (kutakbash_parse_args_previous_char), a
+    ld a, 1
+    ld (kutakbash_parse_args_separator_mark), a
 
     ; resetting argc
     ld a, 0
@@ -132,7 +121,7 @@ kutakbash_argc:
 kutakbash_argv:  ; array with pointers to parsed substrings
     .skip KUTAKBASH_MAX_ARGS * 2 ; pointer size is a "word" (2 bytes)
 
-kutakbash_parse_args_previous_char:  ; used for check what is current char means
+kutakbash_parse_args_separator_mark:  ; used for check what is current char means
     .skip 1  ; one byte, TODO: replace to flag in stack
 
 .section .rodata
