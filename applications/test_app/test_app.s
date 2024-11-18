@@ -2,31 +2,34 @@
 ; reciving int main(uint8_t argc, const char **argv)
 
 .include "applications/test_app/test_app.inc"
+.include "applications/kutakbash/kutakbash.inc"
 .include "string/string.inc"
 
 .section .text
 
 test_app_main:
-    push ix  ; storing ix
+    push af  ; storing af
+    push de  ; storing ix
+    push bc  ; storing bc
     push hl  ; storing hl
 
-    ld ix, 6  ; there is no way to set load sp value to ix, skipping pushed 2 reg pairs and return address
-    add ix, sp  ; loading sp value to ix
-
-    ld a, (ix + 0)  ; loading arguments count (argc) to a to check zero
-    or a  ; oring a with a to check if no cmd line arguments passed
-    jr z, test_app_main_arg_loop_end  ; if no arguments, do nothing
+    ld a, (kutakbash_argc)  ; loading argc
     ld b, a  ; loading arguments count to b reg for djnz instruction
+    ld de, kutakbash_argv
 
     test_app_main_arg_loop:
-        ld l, (ix + 0)  ; ptr to arg, low byte
-        ld h, (ix + 1)  ; ptr to arg, high byte
-        ;ld hl, 
-
         ld hl, test_app_main_msg_recieved_arg
         push hl
         call putstr
 
+        ld a, (de)  ; with no offset it will be address! of argv[0]
+        ld l, a  ; loading first address byte to l
+        inc de
+        ld a, (de)  ; getting a second address byte
+        ld h, a  ; loading second address byte to h
+        inc de
+        push hl  ; printing arg
+        call putstr
         ; print
 
         ld l, 0x0A
@@ -37,14 +40,10 @@ test_app_main:
     test_app_main_arg_loop_end:
 
     pop hl  ; restoring hl
-    pop ix  ; restoring ix
+    pop bc  ; restoring bc
+    pop de  ; restoring ix
+    pop af  ; restoring af
 
-    exx  ; exchanging register pairs with they shadow
-    pop hl  ; return address
-    pop bc  ; removing arg1
-    pop bc  ; removing arg2
-    push hl  ; return address
-    exx  ; restoring registers
     ret
 
 .section .rodata

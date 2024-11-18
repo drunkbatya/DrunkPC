@@ -1,5 +1,5 @@
 KUTAKBASH_INPUT_STRING_SIZE = 101 ; bytes
-KUTAKBASH_MAX_ARGS = 10 ; arguments
+KUTAKBASH_MAX_ARGS = 5 ; arguments
 KUTAKBASH_ARGS_SEPARATOR = ' '
 
 ; functions

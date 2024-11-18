@@ -90,6 +90,8 @@ kutakbash_parse_args:
     ld hl, kutakbash_parse_args_overflow_msg
     push hl
     call putstr
+    ld a, 0  ; resetting argc to indicate an error
+    ld (kutakbash_argc), a  ; resetting argc to indicate an error
     kutakbash_parse_args_loop_end:
 
     pop af  ; restoring af
@@ -136,4 +138,4 @@ kutakbash_parse_args_previous_char:  ; used for check what is current char means
 .section .rodata
 
 kutakbash_parse_args_overflow_msg:
-    .asciz "Parse args failed due overflow!"
+    .asciz "Parse args failed due overflow!\n"

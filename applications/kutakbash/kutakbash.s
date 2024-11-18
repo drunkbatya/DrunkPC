@@ -22,12 +22,6 @@ kutakbash_main:
     ld l, 0x0A
     push hl
     call putchar
-
-    ld hl, 0  ; argv
-    push hl
-    ld hl, 2  ; argc
-    push hl
-    call test_app_main
     ; temp
 
     kutakbash_main_loop:
@@ -51,27 +45,28 @@ kutakbash_main:
         jr nz, kutakbash_main_loop  ; skipping if true
 
         call kutakbash_parse_args  ; assuming input string isn't empty
-        ld a, kutakbash_argc  ; checking error (argc setted to 0 means parse error)
+        ld a, (kutakbash_argc)  ; checking error (argc setted to 0 means parse error)
         or a  ; check error
         jr z, kutakbash_main_loop  ; lopping again if error
 
         ; parse command
+        call test_app_main  ; temp
 
         ; if unknown command
-        ld de, kutakbash_no_such_file_header  ; printing error header
-        push de
-        call putstr
+        ;ld de, kutakbash_no_such_file_header  ; printing error header
+        ;push de
+        ;call putstr
 
-        ld a, (kutakbash_argv)  ; with no offset it will be address! of argv[0]
-        ld l, a  ; loading first address byte to l
-        ld a, (kutakbash_argv + 1)  ; getting a second address byte
-        ld h, a  ; loading second address byte to h
-        push hl  ; printing command
-        call putstr
+        ;ld a, (kutakbash_argv)  ; with no offset it will be address! of argv[0]
+        ;ld l, a  ; loading first address byte to l
+        ;ld a, (kutakbash_argv + 1)  ; getting a second address byte
+        ;ld h, a  ; loading second address byte to h
+        ;push hl  ; printing command
+        ;call putstr
 
-        ld de, kutakbash_no_such_file_msg  ; printing error
-        push de
-        call putstr
+        ;ld de, kutakbash_no_such_file_msg  ; printing error
+        ;push de
+        ;call putstr
 
         jr kutakbash_main_loop  ; loop
 
