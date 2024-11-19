@@ -7,6 +7,7 @@ KUTAKBASH_ARGS_SEPARATOR = ' '
 .global kutakbash_get_input_string
 .global terminal_input_string
 .global kutakbash_parse_args
+.global kutakbash_parse_command_exec
 
 ; variables
 .global kutakbash_input_string_buffer

@@ -51,5 +51,8 @@ test_app_main:
 
 .section .rodata
 
+test_app_name:
+    .asciz "test_app"
+
 test_app_main_msg_recieved_arg:
     .asciz "Recieved arg: "
