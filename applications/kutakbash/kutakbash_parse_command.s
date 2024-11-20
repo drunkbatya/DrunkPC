@@ -95,4 +95,8 @@ internal_commands:  ; TODO: separate this to compile-time templated file
     .word test_app_name
     .word test_app_main
     ; test_app
+    ; clear
+    .word clear_name
+    .word clear_main
+    ; clear
 internal_commands_end:  ; just to know the size..

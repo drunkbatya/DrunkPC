@@ -63,6 +63,9 @@ kutakbash_get_input_string:
         ; redraw string
         jr kutakbash_get_input_string_loop
     kutakbash_get_input_string_backspace:
+    ; remove a char from string at position
+    ; clear whole line
+    ; redraw line
     call terminal_cursor_left
     ; process backspace, remove a char from the input buffer
     jr kutakbash_get_input_string_loop  ; going back to loop

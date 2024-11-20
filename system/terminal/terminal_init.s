@@ -11,8 +11,10 @@ terminal_reset:
     push hl
     call ra6963_set_address_pointer
 
-    ld hl, 0  ; ; setting cursor to 0
+    ld hl, 0  ; setting cursor to 0
     ld (terminal_cursor_coordinates), hl
+
+    ld (terminal_view_area_address), hl
 
     pop hl  ; restoring hl
     ret
