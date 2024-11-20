@@ -52,6 +52,7 @@ RA6963_FONT_HEIGHT = 8
 .global ra6963_await_data_auto_mode_write
 .global ra6963_clear
 .global ra6963_set_auto_write
+.global ra6963_putchar
 .global ra6963_reset_auto_write
 .global ra6963_set_address_pointer
 .global ra6963_set_pixel
@@ -66,5 +67,6 @@ RA6963_FONT_HEIGHT = 8
 
 ; variables
 .global ra6963_zero_offset
+.global ra6963_address_pointer
 
 ; vim: set ft=asm:

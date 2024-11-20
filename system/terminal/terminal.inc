@@ -10,6 +10,7 @@ TERMINAL_HEIGHT = TERMINAL_DISPLAY_HEIGHT / TERMINAL_CHAR_HEIGHT
 ; functions
 .global terminal_init
 .global terminal_reset
+.global terminal_putchar
 .global terminal_cursor_right
 .global terminal_cursor_left
 .global terminal_cursor_newline

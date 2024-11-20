@@ -36,7 +36,7 @@ kutakbash_main:
     call putstr
     ld l, 0x0A
     push hl
-    call putchar
+    call terminal_putchar
     ; temp
 
     kutakbash_main_loop:

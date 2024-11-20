@@ -21,7 +21,7 @@ main:
 
     ld hl, 0x0A
     push hl
-    call putchar
+    call terminal_putchar
 
     ld hl, hex_str
     push hl
@@ -29,13 +29,16 @@ main:
 
     ld hl, 16
     push hl
-    ld hl, system_welcome_str
-    push hl
+    ld hl, ra6963_address_pointer
+    ld e, (hl)
+    inc hl
+    ld d, (hl)
+    push de
     call putnbr
 
     ld hl, 0x0A
     push hl
-    call putchar
+    call terminal_putchar
 
     ;call compactflash_init
     ;pop hl

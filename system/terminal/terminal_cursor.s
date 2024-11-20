@@ -90,6 +90,9 @@ terminal_cursor_left:
     push hl  ; 1st arg of the ra6963_set_cursor_pointer
     call ra6963_set_cursor_pointer
 
+    ; shifting address pointer
+    ld hl, (ra6963_address_pointer)
+
     terminal_cursor_left_end_do_nothing:
     pop hl  ; restoring hl
     pop af  ; restoring af

@@ -58,7 +58,7 @@ kutakbash_get_input_string:
         push de  ; arg1 of the append_to_string function, pointer to the dst string
         call strappend  ; appending char to a null-terminated string
         push hl  ; new line char in l
-        call putchar  ; print appended char directly
+        call terminal_putchar  ; print appended char directly
         ; Clear screen..
         ; redraw string
         jr kutakbash_get_input_string_loop
@@ -83,7 +83,7 @@ kutakbash_get_input_string:
     kutakbash_get_input_string_new_line:
     ld l, 0x0A  ; new line char
     push hl  ; new line char in l
-    call putchar  ; print new line character directly without adding it to the buffer
+    call terminal_putchar  ; print new line character directly without adding it to the buffer
 
     kutakbash_get_input_string_return_true:
     ld (ix + 0), 1  ; true

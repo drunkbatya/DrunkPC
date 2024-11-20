@@ -37,7 +37,7 @@ test_app_main:
 
         ld l, 0x0A
         push hl
-        call putchar
+        call terminal_putchar
 
         djnz test_app_main_arg_loop  ; itterating over arguments
     test_app_main_arg_loop_end:

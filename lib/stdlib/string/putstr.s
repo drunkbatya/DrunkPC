@@ -21,16 +21,16 @@ putstr:
 
     ld l, (ix + 0)  ; loading string pointer
     ld h, (ix + 1)  ; loading string pointer
-    ld b, 0  ; dummy byte to call putchar function and pass a char throught bc reg pair
+    ld b, 0  ; dummy byte to call terminal_putchar function and pass a char throught bc reg pair
     putstr_loop:
         ld a, (hl)  ; loading byte to draw
         or a  ; check if zero (null-terminator)
         jr z, putstr_loop_end
 
         ld c, a  ; char to draw
-        push bc  ; first argument of putchar function (char to draw)
+        push bc  ; first argument of terminal_putchar function (char to draw)
 
-        call putchar
+        call terminal_putchar
 
         inc hl
         jr putstr_loop
