@@ -13,10 +13,11 @@
 ;   void strchardel(unsigned char* str, uint16_t position);
 strchardel:
     push af  ; storing af
+    push hl  ; storing hl
     push ix  ; storing ix
     push de  ; storing de
 
-    ld ix, 8  ; there is no way to set load sp value to ix, skipping pushed 5 reg pairs and the return address
+    ld ix, 10  ; there is no way to set load sp value to ix, skipping pushed 5 reg pairs and the return address
     add ix, sp  ; loading sp value to ix
 
     ld l, (ix + 0)  ; str ptr low byte
@@ -47,6 +48,7 @@ strchardel:
     strchardel_loop_end:
     pop de  ; restoring de
     pop ix  ; restoring ix
+    pop hl  ; restoring hl
     pop af  ; restoring af
 
     exx  ; exchanging register pairs with their shadow
