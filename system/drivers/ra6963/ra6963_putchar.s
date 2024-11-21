@@ -19,7 +19,6 @@ ra6963_putchar:
     call ra6963_await_cmd_or_data
     out (IO_LCD_CMD_ADDR), a
 
-
     ; storing display address ptr
     ld hl, ra6963_address_pointer  ; loading ptr variable
     ld e, (hl)  ; loading low address byte first

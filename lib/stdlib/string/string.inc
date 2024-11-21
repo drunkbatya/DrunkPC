@@ -5,5 +5,6 @@
 .global getchar
 .global strrev
 .global strcmp
+.global strchardel
 
 ; vim: set ft=asm:

@@ -83,4 +83,3 @@ kutakbash_no_such_file_msg:
 
 test1:
     .asciz "Git hash: "
-

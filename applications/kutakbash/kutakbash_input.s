@@ -100,6 +100,9 @@ kutakbash_get_input_string:
     pop af  ; restoring af
     ret
 
+kutakbash_redraw_input_string:
+    ret
+
 .section .bss
 
 kutakbash_input_string_buffer:
