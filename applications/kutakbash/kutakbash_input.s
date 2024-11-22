@@ -68,20 +68,37 @@ kutakbash_get_input_string:
         push hl  ; ld bc, hl
         pop bc  ; ld bc, hl
 
-        pop hl  ; restoring hl
+        ; determinating buffer str length
+        push de  ; arg1 of the strlen function, pointer to the dst string
+        call strlen
+        pop hl  ; str length
+        or a  ; just clear carry flag
+        sbc hl, bc  ; check if position == str len
+        ; restoring hl isn't required here
 
+        pop hl  ; restoring hl
+        jr z, kutakbash_get_input_string_append_char
+
+        kutakbash_get_input_string_insert_char:
         push hl  ; arg3 of the append_to_string function, printable char in l
         push bc  ; arg2 of the strappend function, position to append
         push de  ; arg1 of the append_to_string function, pointer to the dst string
-        call strappend  ; appending char to a null-terminated string
+        call strinsert  ; inserting char to the null-terminated string
+        call kutakbash_redraw_input_string  ; refrawing input string
+        call terminal_cursor_right  ; shifting cursor
+        jr kutakbash_get_input_string_loop_continue
+
+        ; append char
+        kutakbash_get_input_string_append_char:
+        push hl  ; arg2 of the append_to_string function, printable char in l
+        push de  ; arg1 of the append_to_string function, pointer to the dst string
+        call strappend  ; appending a char to the null-terminated string
         push hl  ; new line char in l
         call terminal_putchar  ; print appended char directly
 
+        kutakbash_get_input_string_loop_continue:
         ld hl, kutakbash_local_cursor_position  ; inc cursor position
         inc (hl)  ; inc cursor position
-
-        ; Clear screen..
-        ; redraw string
         jr kutakbash_get_input_string_loop
     kutakbash_get_input_string_backspace:
     call kutakbash_process_backspace

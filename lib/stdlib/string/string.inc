@@ -1,5 +1,6 @@
 ; functions
 .global strappend
+.global strinsert
 .global putstr
 .global putnbr
 .global getchar
