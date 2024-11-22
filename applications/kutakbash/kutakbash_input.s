@@ -2,6 +2,7 @@
 .include "applications/kutakbash/kutakbash.inc"
 .include "string/string.inc"
 .include "keyboard/keyboard_codes.inc"
+.include "drivers/ra6963/ra6963.inc"
 
 .section .text
 
@@ -26,6 +27,9 @@ kutakbash_get_input_string:
 
     ld hl, kutakbash_input_string_buffer  ; resseting input buffer
     ld (hl), 0  ; setting null-terminator to position 0
+
+    ld de, (ra6963_address_pointer)  ; remembering current display ptr
+    ld (kutakbash_display_ptr_at_start), de  ; loading ptr to mem to store it
 
     ld de, kutakbash_input_string_buffer  ; buffer add to
 
@@ -114,6 +118,45 @@ kutakbash_get_input_string:
     ret
 
 kutakbash_redraw_input_string:
+    push af  ; storing af
+    push hl  ; storing hl
+    push de  ; storing de
+    push bc  ; storing bc
+
+    ld de, (kutakbash_display_ptr_at_start)  ; loading ptr to mem to store it
+    ld hl, (ra6963_address_pointer)  ; remembering current display ptr
+    or a  ; just clear a carry flag
+    sbc hl, de  ; subtracting kutakbash_display_ptr_at_start from ra6963_address_pointer to get size
+    jr z, kutakbash_redraw_input_string_end  ; do nothing if size == 0
+    jr c, kutakbash_redraw_input_string_end  ; do nothing if size < 0
+
+    ld bc, 0  ; cleared screen value
+    push bc  ; third arg of the ra6963_memset
+    push hl  ; second  arg of the ra6963_memset
+    push de  ; first arg of the ra6963_memset
+
+    call ra6963_memset  ; cleared all printed space
+
+    push de  ; start address pointer
+    call ra6963_set_address_pointer  ; resetting address ptr after memset
+
+    ld hl, kutakbash_input_string_buffer  ; loading user string
+    kutakbash_redraw_input_string_loop:
+        ld a, (hl)  ; loading a char
+        or a  ; check null-terminator
+        jr z, kutakbash_redraw_input_string_end
+        sub RA6963_FONT_OFFSET  ; subtracting font offset from the char code, sets C if borrow
+        ld c, a  ; loading char to draw
+        push bc  ; arg1 of ra6963_putchar
+        call ra6963_putchar
+        inc hl  ; str++
+        jr kutakbash_redraw_input_string_loop
+    kutakbash_redraw_input_string_end:
+    pop bc  ; restoring bc
+    pop de  ; restoring de
+    pop hl  ; restoring hl
+    pop af  ; restoring af
+
     ret
 
 kutakbash_process_right:
@@ -198,6 +241,7 @@ kutakbash_process_backspace:
     ; remove a char from string at position
     ; clear whole line
     ; redraw line
+    call kutakbash_redraw_input_string
     call terminal_cursor_left
     ; process backspace, remove a char from the input buffer
 
@@ -214,6 +258,10 @@ kutakbash_input_string_buffer:
 ; used to check if display cursor now in string range
 ; to allow deleting chars and as string offset when appending
 kutakbash_local_cursor_position:
+    .skip 2
+
+; used to clear user input line
+kutakbash_display_ptr_at_start:
     .skip 2
 
 .section .rodata
