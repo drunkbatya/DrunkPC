@@ -12,10 +12,11 @@
 ;   uint16_t strlen(unsigned char* str);
 strlen:
     push af  ; storing af
+    push hl  ; storing hl
     push ix  ; storing ix
     push de  ; storing de
 
-    ld ix, 8  ; there is no way to set load sp value to ix, skipping pushed 5 reg pairs and the return address
+    ld ix, 10  ; there is no way to set load sp value to ix, skipping pushed 5 reg pairs and the return address
     add ix, sp  ; loading sp value to ix
 
     ld l, (ix + 0)  ; str ptr low byte
@@ -36,6 +37,7 @@ strlen:
 
     pop de  ; restoring de
     pop ix  ; restoring ix
+    pop hl  ; restoring hl
     pop af  ; restoring af
 
     ret

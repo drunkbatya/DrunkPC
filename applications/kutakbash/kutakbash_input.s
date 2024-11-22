@@ -59,16 +59,23 @@ kutakbash_get_input_string:
         ; another printable char, adding to the input buffer
         push hl  ; storing hl
 
-        ld hl, kutakbash_local_cursor_position  ; inc cursor position
-        inc (hl)  ; inc cursor position
+        ; preparing position to send to the strappend
+        ld hl, (kutakbash_local_cursor_position)
+        push hl  ; ld bc, hl
+        pop bc  ; ld bc, hl
 
         pop hl  ; restoring hl
 
-        push hl  ; arg2 of the append_to_string function, printable char in l
+        push hl  ; arg3 of the append_to_string function, printable char in l
+        push bc  ; arg2 of the strappend function, position to append
         push de  ; arg1 of the append_to_string function, pointer to the dst string
         call strappend  ; appending char to a null-terminated string
         push hl  ; new line char in l
         call terminal_putchar  ; print appended char directly
+
+        ld hl, kutakbash_local_cursor_position  ; inc cursor position
+        inc (hl)  ; inc cursor position
+
         ; Clear screen..
         ; redraw string
         jr kutakbash_get_input_string_loop
