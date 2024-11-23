@@ -39,6 +39,12 @@ kutakbash_main:
     call terminal_putchar
     ; temp
 
+    ; temp1
+    ld hl, test2
+    push hl
+    call putstr
+    ; temp1
+
     kutakbash_main_loop:
         ld hl, kutakbash_prompt  ; printing prompt first
         push hl
@@ -83,3 +89,7 @@ kutakbash_no_such_file_msg:
 
 test1:
     .asciz "Git hash: "
+
+test2:
+    .byte 0xb3, 0xc2, 0xc1, 0xce, 0xc1, 0x20, 0xd7, 0x20, 0xd2
+    .byte 0xcf, 0xd4, 0x2c, 0x20, 0xc2, 0xcc, 0xd1, 0x0A, 0x00

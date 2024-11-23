@@ -12,9 +12,11 @@ RA6963_SET_GRAPHIC_AREA = 0x43
 RA6963_SET_ADDRESS_POINTER = 0x24
 RA6963_GRAPHIC_RAM_START_ADDR = 0x0000
 RA6963_SET_BIT = 0xF8
+RA6963_SET_OFFSET_REGISTER = 0x22
 
 ; cursor
 RA6963_SET_1_LINE_CURSOR = 0xA0
+RA6963_SET_8_LINE_CURSOR = 0xA7
 RA6963_SET_CURSOR_POSITION = 0x21
 
 ; modes
@@ -45,6 +47,10 @@ RA6963_FONT_OFFSET = 32
 RA6963_FONT_WIDTH = 6
 RA6963_FONT_HEIGHT = 8
 
+; custom font
+RA6963_CUSTOM_FONT_START_ADDR = 0x7800
+RA6963_OFFSET_REGISTER_VALUE = RA6963_CUSTOM_FONT_START_ADDR / 2048
+
 ; functions
 .global ra6963_init
 .global ra6963_await_cmd_or_data
@@ -64,6 +70,8 @@ RA6963_FONT_HEIGHT = 8
 .global ra6963_apply_zero_offset
 .global ra6963_memset
 .global ra6963_set_cursor_pointer
+.global ra6963_custom_font_init
+.global ra6963_memcpy
 
 ; variables
 .global ra6963_zero_offset

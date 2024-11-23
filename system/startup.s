@@ -3,7 +3,8 @@
 .section .reset_handler,"a",%progbits
 
 reset_handler:
-    ld sp, _estack
+    di  ; disabling interrupts
+    ld sp, _estack  ; setting up the stack pointer
 
     init_data_section:
         ; _sdata, _data_size and _sidata are defined by linker script

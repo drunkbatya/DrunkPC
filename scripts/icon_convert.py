@@ -12,6 +12,10 @@ ICONS_SUPPORTED_FORMATS = ["png"]
 ICONS_TEMPLATE_INC_ICON_NAME = """.global {name}
 """
 
+ICONS_TEMPLATE_INC_FONT_NAME = """{upper_name}_SIZE = {size}
+.global {name}_arr
+"""
+
 ICONS_TEMPLATE_ASM_HEADER = """.include "assets/build/assets_icons.inc"
 .section .rodata
 
@@ -21,6 +25,10 @@ ICONS_TEMPLATE_ASM_ICON = """{name}:
     {name}_height: .byte {height}
     {name}_data: .byte {data}
 """
+
+ICONS_TEMPLATE_ASM_FONT_CHAR = "    .byte {data}  ; {name}"
+ICONS_TEMPLATE_ASM_SKIP_BYTES = "    .skip {skip} * 8  ; no chars in this range\n"
+
 ICONS_TEMPLATE_ASM_ARR_HEADER = "{name}_arr:\n"
 ICONS_TEMPLATE_ASM_ARR_LINE = "    .word {data}\n"
 
@@ -93,7 +101,6 @@ def icons(args):
         newline="\n",
     )
     icons = []
-    font_icons = []
     fonts = []
     icons_c.write(ICONS_TEMPLATE_ASM_HEADER)
     # Traverse icons tree, append image data to source file
@@ -106,7 +113,9 @@ def icons(args):
         if os.path.basename(dirpath).startswith("font_"):
             print(f"ICON: Folder contains font")
             font_name = os.path.split(dirpath)[1].replace("-", "_")
-            fonts.append(font_name)
+            icons_c.write(ICONS_TEMPLATE_ASM_ARR_HEADER.format(name=font_name))
+            previous_char_code = 0
+            size = 0
             for filename in sorted(
                 filenames, key=lambda current: int(current.split(".png")[0])
             ):
@@ -114,18 +123,31 @@ def icons(args):
                 if not _iconIsSupported(filename):
                     continue
                 char_code = filename.split(".png")[0]
-                char_name = f"{font_name}_{char_code}"
-                print(f"ICON: Processing {font_name} character {chr(int(char_code))}")
+                current_char_code = int(char_code)
+                print(
+                    f"ICON: Processing {font_name} character {chr(current_char_code)}"
+                )
+
+                if previous_char_code == 0:
+                    previous_char_code = current_char_code
+                    size += 8
+                else:
+                    offset = current_char_code - previous_char_code
+                    if offset > 1:  # need to insert blank data
+                        icons_c.write(
+                            ICONS_TEMPLATE_ASM_SKIP_BYTES.format(skip=str(offset - 1))
+                        )
+                    previous_char_code = current_char_code
+                    size += offset * 8
+
                 fullfilename = os.path.join(dirpath, filename)
                 width, height, data = _icon2header(fullfilename)
                 icons_c.write(
-                    ICONS_TEMPLATE_ASM_ICON.format(
-                        name=char_name, width=width, height=height, data=data
-                    )
+                    ICONS_TEMPLATE_ASM_FONT_CHAR.format(name=char_code, data=data)
                 )
                 icons_c.write("\n")
-                font_icons.append((char_name, width, height))
-            icons_c.write(ICONS_TEMPLATE_ASM_ARR_HEADER.format(name=font_name))
+                # icons.append((char_code, width, height))
+            fonts.append((font_name, size))
         else:
             # process icons
             for filename in filenames:
@@ -145,9 +167,6 @@ def icons(args):
                 )
                 icons_c.write("\n")
                 icons.append((icon_name, width, height))
-    print(f"ICON: Finalizing source file")
-    for name, width, height in font_icons:
-        icons_c.write(ICONS_TEMPLATE_ASM_ARR_LINE.format(data=name))
 
     icons_c.close()
 
@@ -160,8 +179,12 @@ def icons(args):
     )
     for name, width, height in icons:
         icons_h.write(ICONS_TEMPLATE_INC_ICON_NAME.format(name=name))
-    for name in fonts:
-        icons_h.write(ICONS_TEMPLATE_INC_ICON_NAME.format(name=f"{name}_arr"))
+    for name, size in fonts:
+        icons_h.write(
+            ICONS_TEMPLATE_INC_FONT_NAME.format(
+                name=name, upper_name=name.upper(), size=size
+            )
+        )
     icons_h.close()
     print(f"ICON: Done")
     return 0

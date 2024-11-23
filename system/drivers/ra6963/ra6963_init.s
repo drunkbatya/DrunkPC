@@ -7,6 +7,8 @@ ra6963_init:
     push af
     push hl
 
+    call ra6963_custom_font_init
+
     ; set text home address
     ld hl, 0
     push hl
@@ -41,7 +43,7 @@ ra6963_init:
 
     ; set 1 line cursor
     call ra6963_await_cmd_or_data
-    ld a, RA6963_SET_1_LINE_CURSOR
+    ld a, RA6963_SET_8_LINE_CURSOR
     out (IO_LCD_CMD_ADDR), a
 
     ; mode set
