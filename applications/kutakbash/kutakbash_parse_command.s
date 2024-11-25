@@ -4,6 +4,7 @@
 .include "applications/test_app/test_app.inc"
 .include "applications/clear/clear.inc"
 .include "applications/disp_ptr/disp_ptr.inc"
+.include "applications/less/less.inc"
 
 .section .text
 
@@ -105,4 +106,8 @@ internal_commands:  ; TODO: separate this to compile-time templated file
     .word disp_ptr_name
     .word disp_ptr_main
     ; disp_ptr
+    ; less
+    .word less_name
+    .word less_main
+    ; less
 internal_commands_end:  ; just to know the size..

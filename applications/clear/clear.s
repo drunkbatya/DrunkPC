@@ -6,7 +6,7 @@
 .section .text
 
 clear_main:
-    call terminal_init
+    call terminal_reset
 
     ret
 

@@ -26,7 +26,7 @@ ra6963_init:
     out (IO_LCD_CMD_ADDR), a
 
     ; set graphic home addres
-    ld hl, 0
+    ld hl, 0x2000
     push hl
     call ra6963_set_graphic_home_address
 

@@ -198,6 +198,26 @@ ra6963_modify_byte:
     exx  ; restoring registers
     ret
 
+ra6963_text_mode_cursor_on:
+    push af  ; storing af
+
+    call ra6963_await_cmd_or_data
+    ld a, RA6963_SET_TEXT_ON_GRAPHIC_OFF_CURSOR_ON_BLINK_ON
+    out (IO_LCD_CMD_ADDR), a
+
+    pop af  ; restoring af
+    ret
+
+ra6963_text_mode_cursor_off:
+    push af  ; storing af
+
+    call ra6963_await_cmd_or_data
+    ld a, RA6963_SET_TEXT_ON_GRAPHIC_OFF
+    out (IO_LCD_CMD_ADDR), a
+
+    pop af  ; restoring af
+    ret
+
 .section .bss
 
 ra6963_address_pointer:
