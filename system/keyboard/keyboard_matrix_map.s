@@ -16,9 +16,9 @@ keyboard_matrix_map:
     ; [return] [shift] [z] [x] [c] [v] [b] [n]
     .byte 10 , 0 , 'z', 'x', 'c', 'v', 'b', 'n'
     ; [m] [,] [.] [/] [UP] [CONTROL] [OPTION] [SPACE]
-    .byte 'm', ',', '.', '/', 0  , 0  , 0  , ' '
+    .byte 'm', ',', '.', '/', KBD_UP  , 0  , 0  , ' '
     ; [LEFT] [DOWN] [RIGHT] and 5 dummy bytes
-    .byte KBD_LEFT , 0 , KBD_RIGHT  , 0  , 0  , 0  , 0  , 0
+    .byte KBD_LEFT , KBD_DOWN , KBD_RIGHT  , 0  , 0  , 0  , 0  , 0
 
 keyboard_matrix_map_shift:
     ; [ESC] [!] [@] [#] [$] [%] [^] [&]
