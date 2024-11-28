@@ -130,8 +130,9 @@ drunkfs_read:
         ld (ix + 3), h  ; target buf high byte
 
         ; incrementing position
-        ld hl, drunkfs_file_current_pos  ; loading current position var ptr
-        inc (hl)  ; incrementing position
+        ld hl, (drunkfs_file_current_pos)  ; loading current position var ptr
+        inc hl  ; incrementing position
+        ld (drunkfs_file_current_pos), hl  ; storing position back
 
         ; decrementing size
         dec bc
@@ -199,8 +200,9 @@ drunkfs_read_byte:
     ld (hl), a  ; returning a byte
 
     ; incrementing position
-    ld hl, drunkfs_file_current_pos  ; loading current position var ptr
-    inc (hl)  ; incrementing position
+    ld hl, (drunkfs_file_current_pos)  ; loading current position var ptr
+    inc hl  ; incrementing position
+    ld (drunkfs_file_current_pos), hl  ; storing position back
 
     jr drunkfs_read_byte_success
 

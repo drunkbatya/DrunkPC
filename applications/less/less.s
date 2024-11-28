@@ -142,7 +142,7 @@ less_render_page:
         ld l, a  ; opened fd
         push hl  ; arg1 of the read function
         call drunkfs_read_byte
-        pop hl  ; read_byte return value, size of readen data
+        pop hl  ; read_byte return value, error code
 
         ; checking EOF
         ld a, l  ; loading error code
@@ -157,12 +157,10 @@ less_render_page:
         jr z, less_process_file_loop_render_loop_end
 
         ; checking end of terminal
-        push hl  ; storing hl
         ld de, (ra6963_address_pointer)  ; getting current disp ptr
         ld hl, LESS_LAST_BYTE_BEFORE_LAST_DISPLAY_LINE_ADDR
         or a  ; just cleat the carry flag
         sbc hl, de  ; if we're printed to the last line
-        pop hl  ; restoring hl
         jr z, less_process_file_loop_render_loop_end  ; if last addr == disp addr
 
         ; printing a char
@@ -171,8 +169,6 @@ less_render_page:
         call terminal_putchar
 
         ; going next byte
-        inc hl  ; going to next buffer byte
-        dec bc  ; counting counter-clockwise
         jr less_process_file_loop_render_loop
     less_process_file_loop_render_loop_end:
     ; restoring a current file position
