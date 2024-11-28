@@ -78,6 +78,90 @@ drunkfs_seek:
     exx  ; restoring registers
     ret
 
+; About:
+;   Reads a bytes from file to buf
+; Args:
+;   uint8_t fd - file descriptor
+;   void* buf_ptr - pointer to the buffer to store a byte
+;   uint16_t size - pointer to the buffer to store a byte
+; Return:
+;   uint8_t error - error code
+; C Prototype:
+;   uint8_t drunkfs_read(uint8_t fd, uint16_t buf_ptr, uint16_t size);
+drunkfs_read:
+    push af  ; storing af
+    push hl  ; storing hl
+    push de  ; storing de
+    push bc  ; storing bc
+    push ix  ; storing ix
+
+    ld ix, 12  ; there is no way to set load sp value to ix, skipping pushed 5 reg pairs and the return address
+    add ix, sp  ; loading sp value to ix
+
+    ld c, (ix + 4)  ; loading low byte of size
+    ld b, (ix + 5)  ; loading high byte of size
+
+    drunkfs_read_loop:
+        ; checking size
+        ld a, c  ; loading low byte of size
+        or b  ; if bc == 0?
+        jr z, drunkfs_read_success  ; requested size is reached
+
+        ; checking file end
+        ld hl, (drunkfs_file_size)  ; file size
+        ld de, (drunkfs_file_current_pos)  ; fpos
+        or a  ; just clear the carry flag
+        sbc hl, de  ; check if we'r reached EOF
+        jr c, drunkfs_read_eof  ; if size < position
+        jr z, drunkfs_read_eof  ; if size == position, EOF
+
+        ; reading a byte, current offset in de
+        ld hl, test_data  ; temp, buffer
+        add hl, de  ; ptr = offset + buf addr
+        ld a, (hl)  ; loading a byte
+        ;ld l, (ix + 0)  ; fd low byte only, skip for now
+        ld l, (ix + 2)  ; target buf low byte
+        ld h, (ix + 3)  ; target buf high byte
+        ld (hl), a  ; returning a byte
+
+        ; incrementing target buf local arg
+        inc hl  ; ++
+        ld (ix + 2), l  ; target buf low byte
+        ld (ix + 3), h  ; target buf high byte
+
+        ; incrementing position
+        ld hl, drunkfs_file_current_pos  ; loading current position var ptr
+        inc (hl)  ; incrementing position
+
+        ; decrementing size
+        dec bc
+
+        jr drunkfs_read_loop
+
+    ; return
+    drunkfs_read_eof:
+    ld a, DRUNKFS_ERROR_EOF
+    ld (ix + 4), a  ; return
+    jr drunkfs_read_end
+
+    drunkfs_read_success:
+    ld a, DRUNKFS_ERROR_OK
+    ld (ix + 4), a  ; return
+
+    drunkfs_read_end:
+    pop ix  ; restoring ix
+    pop bc  ; restoring bc
+    pop de  ; restoring de
+    pop hl  ; restoring hl
+    pop af  ; restoring af
+
+    exx  ; exchanging register pairs with their shadow
+    pop hl  ; return address
+    pop bc  ; removing arg1
+    pop bc  ; removing arg2
+    push hl  ; return address
+    exx  ; restoring registers
+    ret
 
 ; About:
 ;   Reads a byte from file
@@ -91,9 +175,10 @@ drunkfs_seek:
 drunkfs_read_byte:
     push af  ; storing af
     push hl  ; storing hl
+    push de  ; storing de
     push ix  ; storing ix
 
-    ld ix, 8  ; there is no way to set load sp value to ix, skipping pushed 5 reg pairs and the return address
+    ld ix, 10  ; there is no way to set load sp value to ix, skipping pushed 5 reg pairs and the return address
     add ix, sp  ; loading sp value to ix
 
     ; checking file end
@@ -131,6 +216,7 @@ drunkfs_read_byte:
 
     drunkfs_read_byte_end:
     pop ix  ; restoring ix
+    pop de  ; restoring de
     pop hl  ; restoring hl
     pop af  ; restoring af
 

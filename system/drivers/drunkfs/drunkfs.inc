@@ -3,6 +3,7 @@
 .global drunkfs_seek
 .global drunkfs_rewind
 .global drunkfs_read_byte
+.global drunkfs_read
 .global drunkfs_getpos
 .global drunkfs_getsize
 
