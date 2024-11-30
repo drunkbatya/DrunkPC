@@ -1,6 +1,6 @@
 ; less - opposite of more
 
-.include "applications/less/less.inc"
+.include "applications/less/less_i.inc"
 .include "applications/kutakbash/kutakbash.inc"
 .include "keyboard/keyboard_codes.inc"
 .include "system/drivers/drunkfs/drunkfs.inc"
@@ -11,102 +11,150 @@
 less_process_show_help:
     ret
 
-less_process_scroll_down:
-    ld a, (less_file_fd)  ; loading opened file ptr
-    ld l, a  ; loading fd to hl
 
-    ; getting current position
-    push hl  ; arg1 of getpos
-    call drunkfs_getpos
-    pop de  ; current position
+; About: Finds the first occurance of '\n' char in file, seeking reverse
+;   from current position to file start, by TERMINAL_WIDTH sized chunks
+; Args:
+;   uint16_t pos - current position
+; Return:
+;   uint16_t ret_pos - ptr to the firs occurance of '\n' char in in file,
+;       from the [current position] to [file start], and [file start](NULL) if not found
+; C Prototype:
+;   uint16_t less_find_char_in_file_in_range(uint16_t pos);
+less_find_char_in_file_in_range:
+    push af  ; storing af
+    push hl  ; storing hl
+    push ix  ; storing ix
+    push de  ; storing de
+    push bc  ; storing bc
 
-    ; getting offset for scroll down
-    ; it may be \n position if this char exists in range
-    ;   [(current fpos)-(one line size in bytes)]
-    ; if the char '\n' is not exists, the offset will be TERMINAL_WIDTH
-    ; trying to read TERMINAL_WIDTH bytes to buffer
-    ld hl, TERMINAL_WIDTH  ; (one line size in bytes)
-    push hl  ; arg3 of the read function, size in bytes
-    ld hl, less_buffer  ; address of the buffer
-    push hl  ; arg2 of the read function, buffer ptr
-    ld a, (less_file_fd)  ; loading opened file ptr
-    ld l, a  ; opened fd
-    push hl  ; arg1 of the read function
-    call drunkfs_read
-    pop hl  ; read return value, error code
+    ld ix, 12  ; there is no way to set load sp value to ix, skipping pushed 5 reg pairs and the return address
+    add ix, sp  ; loading sp value to ix
 
-    ld a, l  ; read return code
-    cp DRUNKFS_ERROR_EOF
-    jr z, less_process_scroll_down_do_nothing  ; if we'r got EOF while reading this line
+    ld c, (ix + 0)  ; position low byte
+    ld b, (ix + 1)  ; position high byte
 
-    ; searching for '\n' in readed one terminal line-sized buffer
-    ld hl, TERMINAL_WIDTH  ; one line size in bytes
-    push hl  ; arg3 of memchr function, arr size
-    ld l, 0x0A  ; searching for the new line char
-    push hl  ; arg2 of memchr function, target char to find
-    ld hl, less_buffer  ; readed buffer
-    push hl  ; arg1 of memchr function, str buffer
-    call memchr  ; searching for the char
-    pop hl  ; memchr return value
+    ; reverse searching '\n' char from current pos to file start
+    less_find_char_in_file_in_range_loop:
+        ; checking file pos == 0
+        ld a, c  ; loading position low byte
+        or b  ; checking if pos == 0
+        jr z, less_find_char_in_file_in_range_end
 
-    ld a, l  ; checking return value, low ptr byte
-    or h  ; if is a NULL ptr? (means char not found)
-    jr z, less_process_scroll_down_seek_one_line
+        ; seeking to current fpos
+        push bc  ; arg2 of seek function, fpos
+        ld a, (less_file_fd)  ; loading opened file ptr
+        ld l, a  ; opened fd
+        push hl  ; arg1 of the seek function
+        call drunkfs_seek
+        pop hl  ; seek return code
 
-    ; if we found '\n' char in string, seeking that pos + 1 byte more
-    ; EOF in that case will be covered by redraw function
-    ld bc, less_buffer  ; buf addr
+        ; reading TERMINAL_WIDTH sized chunk to find '\n' char
+        ld hl, TERMINAL_WIDTH  ; (one line size in bytes)
+        push hl  ; arg3 of the read function, size in bytes
+        ld hl, less_buffer  ; address of the buffer
+        push hl  ; arg2 of the read function, buffer ptr
+        ld a, (less_file_fd)  ; loading opened file ptr
+        ld l, a  ; opened fd
+        push hl  ; arg1 of the read function
+        call drunkfs_read
+        pop hl  ; read return value, error code
+
+        ; searching for '\n' in readed one terminal line-sized buffer
+        ld hl, TERMINAL_WIDTH  ; one line size in bytes
+        push hl  ; arg3 of memrchr function, arr size
+        ld l, 0x0A  ; searching for the new line char
+        push hl  ; arg2 of memrchr function, target char to find
+        ld hl, less_buffer  ; readed buffer
+        push hl  ; arg1 of memrchr function, str buffer
+        call memrchr  ; searching for the char  ; TODO: memrchr
+        pop hl  ; memrchr return value
+
+        ; finding '\n' char in readen buffer
+        ld a, l  ; checking return value, low ptr byte
+        or h  ; if is a NULL ptr? (means char not found)
+        jr nz, less_find_char_in_file_in_range_char_found
+
+        ; if in current readen block no '\n' bound
+        push bc  ; ld hl, bc
+        pop hl  ; ld hl, bc
+        ld de, TERMINAL_WIDTH
+        or a  ; just clear carry flag
+        sbc hl, de  ; subtracting less_buffer size from current fpos
+        jr c, less_find_char_in_file_in_range_end  ; if (current pos - TERMINAL_WIDTH) < 0
+        push hl  ; ld bc, hl
+        pop bc  ; ld bc, hl
+        jr less_find_char_in_file_in_range_loop
+
+    less_find_char_in_file_in_range_char_found:
+    ; if we found '\n' char in string (offset in hl), seeking that pos + 1 byte more
+    ld de, less_buffer  ; buf addr
     or a  ; just clear carry flag
-    sbc hl, bc  ; subtracting buff addr from the position ptr (in hl) to get offset
-    add hl, de  ; adding entrypoint pos + calculated offset
+    sbc hl, de  ; subtracting buff addr from the position ptr (in hl) to get offset
+    add hl, bc  ; adding entrypoint pos + calculated offset
     inc hl  ; going to the next byte after '\n'
-    push hl  ; arg2 of fseek function
-    jr less_process_scroll_down_seek
+    push hl  ; ld bc, hl
+    pop bc  ; ld bc, hl
+    jr less_find_char_in_file_in_range_end
 
-    ; no '\n' char in one line, seek TERMINAL_WIDTH bytes
-    less_process_scroll_down_seek_one_line:
-    ld hl, TERMINAL_WIDTH  ; bytes to seek
-    add hl, de  ; seeking entrypoint pos (in de) + TERMINAL_WIDTH
-    push hl  ; arg2 of fseek function
-    jr less_process_scroll_down_seek
-
-    ; reverting changes back
-    less_process_scroll_down_do_nothing:
-    push de  ; arg2 of fseek function - fspos on entrypoint
-
-    ; assuming arg2 - size - is already pushed
-    less_process_scroll_down_seek:
+    less_find_char_in_file_in_range_end:
+    ; seeking back to entrypoint position
+    ld l, (ix + 0)  ; position low byte
+    ld h, (ix + 1)  ; position high byte
+    push hl  ; arg2 of seek function, fpos
     ld a, (less_file_fd)  ; loading opened file ptr
     ld l, a  ; opened fd
     push hl  ; arg1 of the seek function
     call drunkfs_seek
     pop hl  ; seek return code
 
-    less_process_scroll_down_end:
+     ; returning found fpos
+    ld (ix + 0), c  ; position low byte
+    ld (ix + 1), b  ; position high byte
+
+    pop bc  ; restoring bc
+    pop de  ; restoring de
+    pop ix  ; restoring ix
+    pop hl  ; restoring hl
+    pop af  ; restoring af
 
     ret
 
-less_process_scroll_up:
+less_process_scroll_up_1:
     ld a, (less_file_fd)  ; loading opened file ptr
-    ld l , a  ; loading fd to hl
+    ld l, a  ; loading fd to hl
 
     ; getting current position
     push hl  ; arg1 of getpos
     call drunkfs_getpos
-    pop de  ; current position
+    pop hl  ; current position
 
-    ld a, e  ; chec
+    ; checking if already zero
+    ld a, l  ; chec
+    or h  ; if position == 0?
+    jr z, less_process_scroll_up_no_move
 
-    ; checking if ((pos - one line in bytes) >= 0)
-    push de  ; ld hl, de
-    pop hl  ; ld hl, de
-    ld de, TERMINAL_WIDTH  ; terminal width in bytes
+    ; now we need to find file position with last '\n' char, it will be to slow.., but IDGTF
+    ; seeking reverse from current position to file start, by TERMINAL_WIDTH sized
+    ; chunks, the first occurance of '\n' char in that direction will be our start point,
+    ; to calculate desired one line offset
+
+    push hl  ; arg1 of the less_find_char_in_file_in_range funtion, current position
+    call less_find_char_in_file_in_range
+    pop de  ; return value, offset in file, it will be 0 if no char found in that range
+
+    ex de, hl  ; exchanging hl and de, now current pos in de, and last '\n' pos in hl
+
+    ld bc, TERMINAL_WIDTH  ; loading TERMINAL_WIDTH
+    less_process_scroll_up_loop:
+        add hl, bc  ; adding TERMINAL_WIDTH (in bc) to find last '\n' pos (in hl)
+        or a  ; just clear the carry flag
+        sbc hl, de  ; cheking if ('\n' pos + TERMINAL_WIDTH)(in hl) < (current file pos)(in de)
+        add hl, de  ; reverting prevoius cmd back
+        jr c, less_process_scroll_up_loop  ; if ('\n' pos + TERMINAL_WIDTH)(in hl) < (current file pos)(in de)
     or a  ; just clear the carry flag
-    sbc hl, de  ; pos - terminal width
-
-    jr c, less_process_scroll_up_to_zero  ; if TERMINAL_WIDTH > position
-
-    jr less_process_scroll_up_end  ; seeking to the calculated offset
+    sbc hl, bc  ; subtracting TERMINAL_WIDTH (in bc) from ('\n' pos + TERMINAL_WIDTH)
+    jr less_process_scroll_up_end
 
     less_process_scroll_up_to_zero:
     ld hl, 0  ; seek to zero
@@ -118,74 +166,7 @@ less_process_scroll_up:
     call drunkfs_seek
     pop hl  ; seek return code
 
-    ret
-
-less_render_page:
-    ; clearing screen
-    call terminal_init
-    call ra6963_text_mode_cursor_off
-
-    ; saving a current file position
-    ld a, (less_file_fd)  ; loading opened file ptr
-    ld l, a  ; opened fd
-    push hl  ; arg1 of the getpos function
-    call drunkfs_getpos
-    pop hl  ; getpos return value, current pos
-    ld (less_file_pos), hl  ; saving a current pos locally
-
-    ; render page
-    less_process_file_loop_render_loop:
-        ; reading data
-        ld hl, less_buffer  ; address of the buffer
-        push hl  ; arg2 of the read function, buffer ptr
-        ld a, (less_file_fd)  ; loading opened file ptr
-        ld l, a  ; opened fd
-        push hl  ; arg1 of the read function
-        call drunkfs_read_byte
-        pop hl  ; read_byte return value, error code
-
-        ; checking EOF
-        ld a, l  ; loading error code
-        or a  ; checking if error is 0 (success)
-        jr nz, less_process_file_loop_render_loop_end  ; if no success
-
-        ; loading a char from the buffer
-        ld a, (less_buffer)  ; loading char to draw
-
-        ; checking EOS
-        or a  ; cheking null-teminator
-        jr z, less_process_file_loop_render_loop_end
-
-        ; checking end of terminal
-        ld de, (ra6963_address_pointer)  ; getting current disp ptr
-        ld hl, LESS_LAST_BYTE_BEFORE_LAST_DISPLAY_LINE_ADDR
-        or a  ; just cleat the carry flag
-        sbc hl, de  ; if we're printed to the last line
-        jr z, less_process_file_loop_render_loop_end  ; if last addr == disp addr
-
-        ; printing a char
-        ld e, a  ; loading char to de
-        push de  ; arg1 of terminal_putchar
-        call terminal_putchar
-
-        ; going next byte
-        jr less_process_file_loop_render_loop
-    less_process_file_loop_render_loop_end:
-    ; restoring a current file position
-    ld hl, 10
-    push hl
-    ld hl, (less_file_pos)  ; getting a local current pos
-    push hl  ; arg2 of the seek function
-    call putnbr
-
-    ld hl, (less_file_pos)  ; getting a local current pos
-    push hl  ; arg2 of seek
-    ld a, (less_file_fd)  ; loading opened file ptr
-    ld l, a  ; opened fd
-    push hl  ; arg1 of the seek function
-    call drunkfs_seek
-    pop hl  ; seek error code
-
+    less_process_scroll_up_no_move:
     ret
 
 less_process_file:

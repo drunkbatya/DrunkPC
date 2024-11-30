@@ -9,5 +9,6 @@
 .global strchardel
 .global strlen
 .global memchr
+.global memrchr
 
 ; vim: set ft=asm:
