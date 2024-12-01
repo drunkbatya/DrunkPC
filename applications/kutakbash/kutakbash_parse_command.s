@@ -5,6 +5,7 @@
 .include "applications/clear/clear.inc"
 .include "applications/disp_ptr/disp_ptr.inc"
 .include "applications/less/less.inc"
+.include "applications/cf_info/cf_info.inc"
 
 .section .text
 
@@ -110,4 +111,8 @@ internal_commands:  ; TODO: separate this to compile-time templated file
     .word less_name
     .word less_main
     ; less
+    ; cf_info
+    .word cf_info_name
+    .word cf_info_main
+    ; cf_info
 internal_commands_end:  ; just to know the size..

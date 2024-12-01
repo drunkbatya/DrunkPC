@@ -10,5 +10,6 @@
 .global strlen
 .global memchr
 .global memrchr
+.global memswap
 
 ; vim: set ft=asm:
