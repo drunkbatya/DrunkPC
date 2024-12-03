@@ -25,7 +25,7 @@ less_process_scroll_up:
     ; checking if cur pos == 0
     ld a, l  ; loading low byte to a
     or h  ; checking if == 0
-    jr z, less_process_scroll_up_end
+    jp z, less_process_scroll_up_end
 
     push hl  ; ld ix, hl
     pop ix  ; ld ix, hl
@@ -35,11 +35,22 @@ less_process_scroll_up:
     or a  ; just clear the carry flag
     sbc hl, bc  ; subtracting TERMINAL_WIDTH from the current pos
     jr z, less_process_scroll_up_seek_to_zero  ; if current pos - TERMINAL_WIDTH == 0
-    jr c, less_process_scroll_up_seek_to_zero  ; if current pos - TERMINAL_WIDTH < 0
+    jr c, less_process_scroll_up_seek_to_zero_calc_size  ; if current pos - TERMINAL_WIDTH < 0
     jr less_process_scroll_up_seek_to_offset
 
+    less_process_scroll_up_seek_to_zero_calc_size:
+    or a  ; just clear the carry flag
+    ld de, TERMINAL_WIDTH  ; to subtract from
+    add hl, bc  ; reverting subtraction, now in hl the current pos
+    ex de, hl  ; exchanging de and hl, now in de the current pos
+    sbc hl, de  ; subtracting file pos from TERMINAL_WIDTH to get size
+    push hl  ; ld bc, hl
+    pop bc  ; ld bc, hl, now size in bc
+    ld hl, 0  ; seek to zero
+    jr less_process_scroll_up_seek_to_offset
     less_process_scroll_up_seek_to_zero:
     ld hl, 0  ; seek to zero
+    ld bc, TERMINAL_WIDTH  ; size
     less_process_scroll_up_seek_to_offset:
     push hl  ; arg2 of seek function, fpos
     ld a, (less_file_fd)  ; loading opened file ptr
@@ -57,8 +68,7 @@ less_process_scroll_up:
     ;   [(current fpos)-(one line size in bytes (or file start))]
     ; if the char '\n' is not exists, the offset will be TERMINAL_WIDTH
     ; trying to read TERMINAL_WIDTH bytes to buffer
-    ld hl, TERMINAL_WIDTH  ; (one line size in bytes)
-    push hl  ; arg3 of the read function, size in bytes
+    push bc  ; arg3 of the read function, size in bytes
     ld hl, less_buffer  ; address of the buffer
     push hl  ; arg2 of the read function, buffer ptr
     ld a, (less_file_fd)  ; loading opened file ptr
@@ -68,8 +78,7 @@ less_process_scroll_up:
     pop hl  ; read return value, error code
 
     ; searching for '\n' in readed one terminal line-sized buffer
-    ld hl, TERMINAL_WIDTH  ; one line size in bytes
-    push hl  ; arg3 of memchr function, arr size
+    push bc  ; arg3 of memchr function, arr size
     ld l, 0x0A  ; searching for the new line char
     push hl  ; arg2 of memchr function, target char to find
     ld hl, less_buffer  ; readed buffer
@@ -81,14 +90,22 @@ less_process_scroll_up:
     or h  ; if is a NULL ptr? (means char not found)
     jr z, less_process_scroll_up_seek
 
-    ; if we found '\n' char in string, subtracting this position from TERMINAL_WIDTH,
-    ; and seeking that pos
+    ; if we found '\n' char in string, need to determinate if this char is a start prt
+    ; of is the end. In the first case it will be right before the entrypoint offset
     ld bc, less_buffer  ; buf addr
     or a  ; just clear carry flag
     sbc hl, bc  ; subtracting buff addr from the position ptr (in hl) to get offset
-    inc hl  ; going to the next byte after '\n'
-    push hl  ; ld bc, hl
-    pop de  ; ld bc, hl
+    ;add hl, ix
+    inc hl  ; to compare this char with the entrypoint pos
+
+    ; if we found '\n' char in string, subtracting this position from entrypoint pos
+    push ix  ; entrypoint pos, ld de, ix
+    pop de  ; entrypoint pos, ld de, ix
+    or a  ; just clear carry flag
+    sbc hl, de  ; subtracting offset from line width
+    ;jr z, less_process_scroll_up_need_to_find_prev_nl_char
+
+    ; if prevoiusly found '\n' char is the end postion
 
     ; getting entrypoint position
     push ix  ; ld hl, ix: entrypoint position

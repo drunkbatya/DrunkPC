@@ -3,6 +3,7 @@
 .include "applications/cf_info/cf_info.inc"
 .include "terminal/terminal.inc"
 .include "system/drivers/compactflash/compactflash.inc"
+.include "lib/stdlib/core/core.inc"
 
 .section .text
 
@@ -17,7 +18,7 @@ cf_info_main:
     pop hl  ; compactflash_read_data return value
     ld a, l  ; cheking success
     or a
-    jr z, cf_read_fail  ; exiting immidiately if no success
+    jp z, cf_read_fail  ; exiting immidiately if no success
 
     ; printing Model
     ld hl, cf_read_model_string
@@ -63,6 +64,38 @@ cf_info_main:
     push hl
     call terminal_putchar
 
+    ; Printing size
+    ld hl, cf_read_size_string
+    push hl  ; arg1 of putstr
+    call putstr
+
+    ld hl, compactflash_sector_buf
+    ld de, 120  ; serial start address is 114
+    add hl, de
+    ;ld de, 4  ; model number is 4 bytes long
+    ;push de  ; arg2 of memswap function
+    ;push hl  ; arg1 of memswap function
+    ;call memswap
+    ; printing msw first
+    inc hl
+    inc hl
+    ld de, 10  ; arg2 of putnbr function, base
+    push de  ; arg2 of putnbr function, base
+    push hl  ; arg1 of dereference_uint16 function, return value in stack - arg1 of putnbr
+    call dereference_uint16
+    call putnbr
+    dec hl
+    dec hl
+    ld de, 10  ; arg2 of putnbr function, base
+    push de  ; arg2 of putnbr function, base
+    push hl  ; arg1 of dereference_uint16 function, return value in stack - arg1 of putnbr
+    call dereference_uint16
+    call putnbr
+
+    ld l, 0x0A
+    push hl
+    call terminal_putchar
+
     jr cf_info_end
 
     cf_read_fail:
@@ -87,3 +120,6 @@ cf_read_model_string:
 
 cf_read_serial_string:
     .asciz "Serial: "
+
+cf_read_size_string:
+    .asciz "Size: "
