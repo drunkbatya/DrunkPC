@@ -39,6 +39,62 @@ drunkfs_open:
     pop af  ; restoring af
     ret
 
+
+; About:
+;   Changing a opened file read/write direction to forward (default)
+; Args:
+;   uint8_t fd - file descriptor
+; Return:
+;   uint8_t error - error
+; C Prototype:
+;   uint8_t drunkfs_set_rw_direction_forward(uint8_t fd);
+drunkfs_set_rw_direction_forward:
+    push af  ; storing af
+    push ix  ; storing ix
+
+    ld ix, 6  ; there is no way to set load sp value to ix, skipping pushed 5 reg pairs and the return address
+    add ix, sp  ; loading sp value to ix
+
+    ; currently fd is ignored
+
+    ld a, DRUNKFS_RW_DIRECTION_FORWARD
+    ld (drunkfs_file_current_direction), a
+
+    ; returning error code
+    ld (ix + 0), DRUNKFS_ERROR_OK  ; no error
+
+    pop ix  ; restoring ix
+    pop af  ; restoring af
+    ret
+
+; About:
+;   Changing a opened file read/write direction to backward
+; Args:
+;   uint8_t fd - file descriptor
+; Return:
+;   uint8_t error - error
+; C Prototype:
+;   uint8_t drunkfs_set_rw_direction_backward(uint8_t fd);
+drunkfs_set_rw_direction_backward:
+    push af  ; storing af
+    push ix  ; storing ix
+
+    ld ix, 6  ; there is no way to set load sp value to ix, skipping pushed 5 reg pairs and the return address
+    add ix, sp  ; loading sp value to ix
+
+    ; currently fd is ignored
+
+    ld a, DRUNKFS_RW_DIRECTION_BACKWARD
+    ld (drunkfs_file_current_direction), a
+
+    ; returning error code
+    ld (ix + 0), DRUNKFS_ERROR_OK  ; no error
+
+    pop ix  ; restoring ix
+    pop af  ; restoring af
+    ret
+
+
 ; About:
 ;   Changing a opened file position
 ; Args:
@@ -190,7 +246,7 @@ drunkfs_read_byte:
     jr c, drunkfs_read_byte_eof  ; if size < position
     jr z, drunkfs_read_byte_eof  ; EOF
 
-    ; reading a byte, current offset in de
+    ; reading a byte, current offset in de, TODO: do not write if dec and pos  == 0
     ld hl, test_data  ; temp, buffer
     add hl, de  ; ptr = offset + buf addr
     ld a, (hl)  ; loading a byte
@@ -199,9 +255,27 @@ drunkfs_read_byte:
     ld h, (ix + 3)  ; target buf high byte
     ld (hl), a  ; returning a byte
 
-    ; incrementing position
+    ; preparing fpos to modify
     ld hl, (drunkfs_file_current_pos)  ; loading current position var ptr
+
+    ; checking seek direction
+    ld a, (drunkfs_file_current_direction)
+    cp DRUNKFS_RW_DIRECTION_BACKWARD
+    jr z, drunkfs_read_byte_decrement_fpos
+
+    ; incrementing position
     inc hl  ; incrementing position
+    jr drunkfs_read_byte_save_fpos
+
+    ; or decrementing position
+    drunkfs_read_byte_decrement_fpos:
+    ; in first checking we'r already not seeked to the file start
+    ld a, l  ; loading low position byte
+    or h  ; checking zero
+    jr z, drunkfs_read_byte_eof  ; raising error, nothing to decrement
+    dec hl  ; decrementing position
+
+    drunkfs_read_byte_save_fpos:
     ld (drunkfs_file_current_pos), hl  ; storing position back
 
     jr drunkfs_read_byte_success
@@ -345,6 +419,9 @@ drunkfs_file_size:
 
 drunkfs_file_current_pos:
     .skip 2
+
+drunkfs_file_current_direction:
+    .skip 1
 
 .section .rodata
 
