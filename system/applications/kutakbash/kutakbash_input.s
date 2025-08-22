@@ -56,6 +56,16 @@ kutakbash_get_input_string:
         ld h, KBD_RIGHT  ; right arrow key
         cp h  ; if current char (in a) is a right arrow key?
         jr z, kutakbash_get_input_string_right_arrow
+        ; TODO: replace to check is a printable char..
+        ; check up arrow
+        ld h, KBD_UP  ; right arrow key
+        cp h  ; if current char (in a) is a up arrow key?
+        jr z, kutakbash_get_input_string_loop  ; do nothing
+        ; TODO: replace to check is a printable char..
+        ; check down arrow
+        ld h, KBD_DOWN  ; right arrow key
+        cp h  ; if current char (in a) is a down arrow key?
+        jr z, kutakbash_get_input_string_loop  ; do nothing
         ; check SIGINT
         ld h, KBD_CTRL_C  ; Control+C
         cp h  ; if current char (in a) is a Control+C?

@@ -45,6 +45,10 @@ kutakbash_main:
     call putstr
     ; temp1
 
+    ; temp2
+    call cf_info_main
+    ; temp2
+
     kutakbash_main_loop:
         ld hl, kutakbash_prompt  ; printing prompt first
         push hl
