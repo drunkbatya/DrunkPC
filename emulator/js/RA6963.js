@@ -64,6 +64,7 @@ function RA6963() {
     let prevData1 = 0;
     let prevData2 = 0;
     let addressPtr = 0x0000;
+    let textHomeAddressPtr = 0x0000;
     let graphicMode = false;
     let textMode = true;
     let cursorBlink = true;
@@ -145,12 +146,14 @@ function RA6963() {
                 vram[addressPtr] = getCharCodeFromCurrentChar();;
                 break;
             case SET_ADDRESS_POINTER:
-                let addr = prevData1 << 8 | (prevData2 & 0xFF);
-                setAddressPtr(addr);
+                addressPtr = (prevData1 << 8 | (prevData2 & 0xFF)) & 0xFFFF;
                 break;
             case SET_CURSOR_POSITION:
                 cursorX = prevData2 & 0xFF;
                 cursorY = prevData1 & 0xFF;
+                break;
+            case SET_TEXT_HOME_ADDRESS:
+                textHomeAddressPtr = (prevData1 << 8 | (prevData2 & 0xFF)) & 0xFFFF;
                 break;
             default:
                 console.log(`RA6963: unknown cmd 0x${toHexStr(value, 2)}`);
@@ -167,7 +170,7 @@ function RA6963() {
         if (textMode) {
             for (let displayTextY = 0; displayTextY < DISPLAY_HEIGHT_BYTES; displayTextY++) {
                 for (let displayTextX = 0; displayTextX < DISPLAY_WIDTH_BYTES; displayTextX++) {
-                    const charCode = vram[(displayTextY * DISPLAY_WIDTH_BYTES) + displayTextX];
+                    const charCode = vram[textHomeAddressPtr + (displayTextY * DISPLAY_WIDTH_BYTES) + displayTextX];
                     if (charCode >= 0x20 && charCode <= 0x7E) {
                         canvasDrawChar(displayTextX * FONT_WIDTH, displayTextY * FONT_HEIGHT, charCode);
                     }
