@@ -67,6 +67,8 @@ function RA6963() {
     let graphicMode = false;
     let textMode = true;
     let cursorBlink = true;
+    let cursorX = 0;
+    let cursorY = 0;
 
     function incAddrPtr() {
         addressPtr = (addressPtr + 1) & 0xFFFF;
@@ -114,10 +116,17 @@ function RA6963() {
         const canvasBytesPerPixel = 4;
         const cursorWidth = 6;
         const cursorHeight = 8;
-        if (charX < 0 || charX > ((canvas.width * cursorWidth) - 1) || charY < 0 || charY > ((canvas.height * cursorHeight) - 1))  {
+        if (charX < 0 || charX > ((canvas.width * cursorWidth) - 1)
+            || charY < 0 || charY > ((canvas.height * cursorHeight) - 1))  {
             return;
         }
-        let arrStart = (charX * canvasBytesPerPixel) + (charY * (canvas.width * canvasBytesPerPixel));
+        let x = charX * cursorWidth;
+        let y = charY * cursorHeight;
+        for (let canvasY = 0; canvasY < cursorHeight; canvasY++) {
+            for (let canvasX = 0; canvasX < cursorWidth; canvasX++) {
+                canvasSetPixelState(x + canvasX, y + canvasY, true);
+            }
+        }
     }
 
     this.writeData = function (value) {
@@ -138,12 +147,10 @@ function RA6963() {
             case SET_ADDRESS_POINTER:
                 let addr = prevData1 << 8 | (prevData2 & 0xFF);
                 setAddressPtr(addr);
-                console.log(`RA6963: set address ptr 0x${toHexStr(addr, 2)}`);
                 break;
             case SET_CURSOR_POSITION:
-                let x = prevData2 & 0xFF;
-                let y = prevData1 & 0xFF;
-                //console.log(`RA6963: set cursor pos x: ${x}, y: ${y}`);
+                cursorX = prevData2 & 0xFF;
+                cursorY = prevData1 & 0xFF;
                 break;
             default:
                 console.log(`RA6963: unknown cmd 0x${toHexStr(value, 2)}`);
@@ -156,6 +163,7 @@ function RA6963() {
         return 0xFF;
     }
     this.redraw = function() {
+        canvasData.data.fill(0);
         if (textMode) {
             for (let displayTextY = 0; displayTextY < DISPLAY_HEIGHT_BYTES; displayTextY++) {
                 for (let displayTextX = 0; displayTextX < DISPLAY_WIDTH_BYTES; displayTextX++) {
@@ -173,7 +181,9 @@ function RA6963() {
                 }
             }
         }
+        if (cursorBlink) {
+            drawCursor(cursorX, cursorY);
+        }
         ctx.putImageData(canvasData, 0, 0);
-        console.log(`addressPtr: 0x${toHexStr(addressPtr)}`);
     }
 }

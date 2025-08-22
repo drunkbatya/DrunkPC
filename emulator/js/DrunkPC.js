@@ -5,6 +5,7 @@
 let ram = new Uint8Array(0xFFFF + 1);
 let romLocked = true;
 let video = new RA6963();
+let keyboard = new Keyboard();
 const videoAddr = 0x00;
 const videoAddrData = videoAddr + 0x00;
 const videoAddrCmd = videoAddr + 0x01;
@@ -43,14 +44,12 @@ function readIO(addr) {
     addr = addr & 0xFF;
     switch (addr) {
         case videoAddrData:
-            //console.log(`Reading video data: ${toHexStr(addr)}`);
             return video.readData();
         case videoAddrCmd:
             let out = video.readCmd();
-            //console.log(`Reading video cmd: ${toHexStr(addr)}, ${out}`);
-            return out;
+            return video.readCmd();;
         case kbdAddr:
-            //console.log(`Reading keyboard`);
+            return keyboard.read();
             break;
         default:
             console.log(`Reading from unknown IO: 0x${toHexStr(addr, 2)}`);
@@ -68,7 +67,7 @@ function writeIO(addr, value) {
             video.writeCmd(value);
             break;
         case kbdAddr:
-            //console.log(`Writing keyboard: 0x${toHexStr(value)}`);
+            return keyboard.write(value);
             break;
         default:
             console.log(`Writing to unknown IO: 0x${toHexStr(addr, 2)}, value: 0x${toHexStr(value, 2)}`);
@@ -99,8 +98,8 @@ function idle(timeMs) {
     }
 }
 
-//requestAnimationFrame(idle);
+requestAnimationFrame(idle);
 
-for (let i = 0; i < 100000; i++)
-    z80.run_instruction();
-video.redraw();
+//for (let i = 0; i < 100000; i++)
+//    z80.run_instruction();
+//video.redraw();
