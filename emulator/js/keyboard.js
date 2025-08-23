@@ -98,7 +98,7 @@ function Keyboard() {
         if (e.repeat) return;
         if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
         pressed.add(e.code);
-        console.log('DOWN', e.key, e.code);
+        //console.log('DOWN', e.key, e.code);
     }
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);

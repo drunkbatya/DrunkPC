@@ -60,20 +60,21 @@ function RA6963() {
     let ctx = canvas.getContext("2d");
     let canvasData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-    // internal regsters and temp vars
+    // two bytes of data
     let prevData1 = 0;
     let prevData2 = 0;
+    // internal regsters
     let addressPtr = 0x0000;
     let textHomeAddressPtr = 0x0000;
+    let graphicHomeAddressPtr = 0x0000;
     let graphicMode = false;
     let textMode = true;
     let cursorBlink = true;
     let cursorX = 0;
     let cursorY = 0;
-
-    function incAddrPtr() {
-        addressPtr = (addressPtr + 1) & 0xFFFF;
-    }
+    let autoWrite = false;
+    let cursorHeight = 1;
+    let offsetRegister = 0;
 
     function getCharCodeFromCurrentChar() {
         let num = prevData1;
@@ -116,7 +117,6 @@ function RA6963() {
     function drawCursor(charX, charY) {
         const canvasBytesPerPixel = 4;
         const cursorWidth = 6;
-        const cursorHeight = 8;
         if (charX < 0 || charX > ((canvas.width * cursorWidth) - 1)
             || charY < 0 || charY > ((canvas.height * cursorHeight) - 1))  {
             return;
@@ -131,16 +131,21 @@ function RA6963() {
     }
 
     this.writeData = function (value) {
-        value = value & 0xFF;
-        prevData2 = prevData1;
-        prevData1 = value;
+        if (autoWrite) {
+            value += FONT_OFFSET;
+            vram[addressPtr] = value & 0xFF;
+            addressPtr = (addressPtr + 1) & 0xFFFF;
+        } else {
+            prevData2 = prevData1;
+            prevData1 = value & 0xFF;
+        }
     }
 
     this.writeCmd = function(value) {
         switch (value) {
             case DATA_WRITE_AND_INC_ADDR:
                 vram[addressPtr] = getCharCodeFromCurrentChar();;
-                incAddrPtr();
+                addressPtr = (addressPtr + 1) & 0xFFFF;
                 break;
             case DATA_WRITE:
                 vram[addressPtr] = getCharCodeFromCurrentChar();;
@@ -155,8 +160,37 @@ function RA6963() {
             case SET_TEXT_HOME_ADDRESS:
                 textHomeAddressPtr = (prevData1 << 8 | (prevData2 & 0xFF)) & 0xFFFF;
                 break;
+            case SET_GRAPHIC_HOME_ADDRESS:
+                graphicHomeAddressPtr = (prevData1 << 8 | (prevData2 & 0xFF)) & 0xFFFF;
+                break;
+            case SET_AUTO_WRITE:
+                autoWrite = true;
+                break;
+            case RESET_AUTO_WRITE:
+                autoWrite = false;
+                break;
+            case SET_OFFSET_REGISTER:
+                offsetRegister = prevData2 & 0xFF;
+                break;
+            case SET_TEXT_AREA:
+                console.log(`RA6963: set text area command isn't implemented yet`);
+                break;
+            case SET_GRAPHIC_AREA:
+                console.log(`RA6963: set graphic area command isn't implemented yet`);
+                break;
             default:
-                console.log(`RA6963: unknown cmd 0x${toHexStr(value, 2)}`);
+                if ((value >> 4) == 0x09) {  // set mode command
+                    cursorOn = (value & (0x01 << 0));
+                    cursorBlink = (value & (0x01 << 1));
+                    textMode = (value & (0x01 << 2));
+                    graphicMode = (value & (0x01 << 3));
+                } else if ((value >> 3) == 0x14) {  // set cursor pattern command
+                    cursorHeight = (value & 0x07) + 1;
+                } else if ((value >> 4) == 0x08) {  // mode set command
+                    console.log(`RA6963: mode set command isn't implemented yet`);
+                } else {
+                    console.log(`RA6963: unknown cmd 0x${toHexStr(value, 2)}`);
+                }
         }
     }
     this.readData = function() {
