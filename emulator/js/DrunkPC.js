@@ -1,31 +1,39 @@
 // Memmory layout
-// ROM: 0x0000 - 0x3FFF;
-// RAM: 0x4000 - 0xFFFF;
+//  ROM: 0x0000 - 0x3FFF;
+//  RAM: 0x4000 - 0xFFFF;
+// IO layout:
+//  A0-A3 - IO free lines
+//  A4 - internal decoder low active
+//  A5-A7 - IO device number in binnary
+//      0b0000xxxx - device 0
+//      0b1110xxxx - device 7
+//      0bxxx1xxxx - decoder disabled, other bus lines are yours
+
+const IO_LCD_BASE = 0b00000000  // A5 = 0 - device 0
+const IO_LCD_DATA_ADDR = IO_LCD_BASE + 0  // lcd data transfer
+const IO_LCD_CMD_ADDR = IO_LCD_BASE + 1  // lcd command transfer
+
+const IO_KBD_ADDR = 0b00100000 // A5 = 1 - device 1
+
+const COMPACT_FLASH_BASE = 0b01000000  // A6 = 1 - device 2
 
 let ram = new Uint8Array(0xFFFF + 1);
 let romLocked = true;
 let video = new RA6963();
 let keyboard = new Keyboard();
-const videoAddr = 0x00;
-const videoAddrData = videoAddr + 0x00;
-const videoAddrCmd = videoAddr + 0x01;
-const kbdAddr = 0x20;
+let cf = new CompactFlash();
 
 function readMemmory(addr) {
     if (addr >= 0x4000) {
-        //console.log(`CPU: reading RAM: ${toHexStr(addr)}`);
         return ram[addr];
     } else {
-        //console.log(`CPU: reading ROM: ${toHexStr(addr)}`);
         return rom[addr];
     }
 };
 
 function writeMemmory(addr, value) {
     if (addr >= 0x4000) {
-        //console.log(`CPU: writing RAM: ${toHexStr(addr)} with ${toHexStr(value)}`);
         ram[addr] = value;
-        //console.log(`Writing RAM: ${toHexStr(addr)} with ${toHexStr(value)}`)
     } else {
         if (romLocked) {
             console.log(
@@ -34,7 +42,6 @@ function writeMemmory(addr, value) {
                 `value: ${toHexStr(value)}}`
             );
         } else {
-            //console.log(`CPU: writing ROM: ${toHexStr(addr)} with ${toHexStr(value)}`);
             rom[addr] = value;
         }
     }
@@ -43,16 +50,18 @@ function writeMemmory(addr, value) {
 function readIO(addr) {
     addr = addr & 0xFF;
     switch (addr) {
-        case videoAddrData:
+        case IO_LCD_DATA_ADDR:
             return video.readData();
-        case videoAddrCmd:
-            let out = video.readCmd();
-            return video.readCmd();;
-        case kbdAddr:
+        case IO_LCD_CMD_ADDR:
+            return video.readCmd();
+        case IO_KBD_ADDR:
             return keyboard.read();
-            break;
         default:
-            console.log(`Reading from unknown IO: 0x${toHexStr(addr, 2)}`);
+            if ((addr >> 4) == (COMPACT_FLASH_BASE >> 4)) {
+                return cf.read(addr & 0x0F);
+            } else {
+                console.log(`Reading from unknown IO: 0x${toHexStr(addr, 2)}`);
+            }
     }
     return 0;
 };
@@ -60,21 +69,30 @@ function readIO(addr) {
 function writeIO(addr, value) {
     addr = addr & 0xFF;
     switch (addr) {
-        case videoAddrData:
+        case IO_LCD_DATA_ADDR:
             video.writeData(value);
             break;
-        case videoAddrCmd:
+        case IO_LCD_CMD_ADDR:
             video.writeCmd(value);
             break;
-        case kbdAddr:
-            return keyboard.write(value);
+        case IO_KBD_ADDR:
+            keyboard.write(value);
             break;
         default:
-            console.log(`Writing to unknown IO: 0x${toHexStr(addr, 2)}, value: 0x${toHexStr(value, 2)}`);
+            if ((addr >> 4) == (COMPACT_FLASH_BASE >> 4)) {
+                cf.write((addr & 0x0F), value);
+            } else {
+                console.log(`Writing to unknown IO: 0x${toHexStr(addr, 2)}, value: 0x${toHexStr(value, 2)}`);
+            }
     }
 };
 
-let z80 = new Z80({mem_read: readMemmory, mem_write: writeMemmory, io_read: readIO, io_write: writeIO});
+let z80 = new Z80({
+    mem_read: readMemmory,
+    mem_write: writeMemmory,
+    io_read: readIO,
+    io_write: writeIO
+});
 
 const cpuSpeedKhz = 4000;
 let lastTimeMs = 0;
