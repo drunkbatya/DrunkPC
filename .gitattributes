@@ -1,2 +1,3 @@
 *.js -linguist-detectable
 *.html -linguist-detectable
+*.py -linguist-detectable
