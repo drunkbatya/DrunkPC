@@ -10,11 +10,11 @@ INCLUDE = -Isystem -Ilib/stdlib -Ilib
 
 TMPL_SOURCES += $(shell find . -not -path '*/sandbox/*' -not -path '*/.*' -type f -name "*.tmpl")
 
-ASM_SOURCES += $(ASSETSBUILDDIR)/$(ASSETSTARGET)
+#ASM_SOURCES += $(ASSETSBUILDDIR)/$(ASSETSTARGET)
 ASM_SOURCES += $(shell find . -not -path '*/assets/*' -not -path '*/sandbox/*' -not -path '*/.*' -type f -name "*.s")
 ASM_INCLUDES += $(shell find . -not -path '*/assets/*' -not -path '*/sandbox/*' -not -path '*/.*' -type f -name "*.inc")
 
-ASSETS_SOURCES = $(shell find ${ASSETSSRCDIR} -type f -name "*.png")
+#ASSETS_SOURCES = $(shell find ${ASSETSSRCDIR} -type f -name "*.png")
 
 TEMPLATES += $(addprefix $(BUILDDIR)/, $(TMPL_SOURCES:.tmpl=.s))
 

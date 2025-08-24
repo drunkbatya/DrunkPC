@@ -27,7 +27,7 @@ function readMemmory(addr) {
     if (addr >= 0x4000) {
         return ram[addr];
     } else {
-        return rom[addr];
+        return firmware[addr];
     }
 };
 
@@ -42,7 +42,7 @@ function writeMemmory(addr, value) {
                 `value: ${toHexStr(value)}}`
             );
         } else {
-            rom[addr] = value;
+            firmware[addr] = value;
         }
     }
 };

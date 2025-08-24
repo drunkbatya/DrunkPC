@@ -115,4 +115,8 @@ internal_commands:  ; TODO: separate this to compile-time templated file
     .word cf_info_name
     .word cf_info_main
     ; cf_info
+    ; uname
+    .word uname_name
+    .word uname_main
+    ; uname
 internal_commands_end:  ; just to know the size..

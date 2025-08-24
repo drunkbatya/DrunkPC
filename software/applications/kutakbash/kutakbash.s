@@ -27,28 +27,6 @@ kutakbash_main:
     push de
     push af
 
-    ; temp
-    ld hl, test1
-    push hl
-    call putstr
-    ld hl, version_git_hash
-    push hl
-    call putstr
-    ld l, 0x0A
-    push hl
-    call terminal_putchar
-    ; temp
-
-    ; temp1
-    ld hl, test2
-    push hl
-    call putstr
-    ; temp1
-
-    ; temp2
-    call cf_info_main
-    ; temp2
-
     kutakbash_main_loop:
         ld hl, kutakbash_prompt  ; printing prompt first
         push hl
@@ -90,10 +68,3 @@ kutakbash_no_such_file_header:
     .asciz "KutakBash: '"
 kutakbash_no_such_file_msg:
     .asciz "': unknown command\n"
-
-test1:
-    .asciz "Git hash: "
-
-test2:
-    .byte 0xb3, 0xc2, 0xc1, 0xce, 0xc1, 0x20, 0xd7, 0x20, 0xd2
-    .byte 0xcf, 0xd4, 0x2c, 0x20, 0xc2, 0xcc, 0xd1, 0x0A, 0x00

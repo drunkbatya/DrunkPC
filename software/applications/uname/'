@@ -1,0 +1,42 @@
+; Print current OS version and other build metadata
+
+.include "applications/uname/uname.inc"
+.include "terminal/terminal.inc"
+
+.section .text
+
+uname_main:
+    push hl  ; storing hl
+    push de  ; storing de
+
+    ld hl, hex_str
+    push hl
+    call putstr
+
+    ld hl, 16  ; print in hex
+    push hl  ; arg2 of putnbr
+    ; direferencing display ptr address
+    ld hl, ra6963_address_pointer
+    ld e, (hl)
+    inc hl
+    ld d, (hl)
+
+    push de  ; arg1 of putnbr
+    call putnbr
+
+    ld hl, 0x0A  ; new line
+    push hl
+    call terminal_putchar
+
+    pop de  ; restoring de
+    pop hl  ; restoring hl
+
+    ret
+
+.section .rodata
+
+uname_name:
+    .asciz "uname"
+
+os_name:
+    .asciz "DrunkOS"

@@ -54,6 +54,13 @@ def load_font_pillow_from_ttf_bytes(ttf_bytes: bytes, size_px: int) -> ImageFont
     """Create a PIL ImageFont from TTF bytes at the given pixel size."""
     return ImageFont.truetype(io.BytesIO(ttf_bytes), size=size_px)
 
+def reverse_bits(val, width=8):
+    res = 0
+    for _ in range(width):
+        res = (res << 1) | (val & 1)
+        val >>= 1
+    return res
+
 
 def rasterize_code_to_6x8_rows(font: ImageFont.FreeTypeFont, code: int, thresh: int = 128) -> List[int]:
     """
@@ -83,6 +90,7 @@ def rasterize_code_to_6x8_rows(font: ImageFont.FreeTypeFont, code: int, thresh: 
             if px[x, y] > thresh:
                 row_bits |= (1 << x)  # bit0 = leftmost pixel
         rows[y] = row_bits & 0x3F
+        rows[y] = reverse_bits(rows[y])
     return rows
 
 
@@ -125,8 +133,7 @@ def write_output(table: List[List[int]], out_path: str, fmt: str):
     elif fmt == "js":
         # Emit pretty JS array with export
         with open(out_path, "w", encoding="utf-8") as f:
-            f.write("// Auto-generated 6x8 font table (bit0 = leftmost pixel)\n")
-            f.write("export const font = [\n")
+            f.write("const font = [\n")
             for code in range(256):
                 rows = table[code]
                 row_str = ", ".join(str(r) for r in rows)

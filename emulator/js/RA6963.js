@@ -25,8 +25,6 @@ function RA6963() {
     const SET_OFFSET_REGISTER = 0x22;
 
     // cursor
-    const SET_1_LINE_CURSOR = 0xA0;
-    const SET_8_LINE_CURSOR = 0xA7;
     const SET_CURSOR_POSITION = 0x21;
 
     // modes
@@ -34,17 +32,6 @@ function RA6963() {
     const SET_EXOR_MODE = 0x81;
     const SET_AND_MODE = 0x83;
     const SET_TEXT_ATTRIBUTE_MODE = 0x84;
-
-    // display modes
-    const SET_DISPLAY_OFF = 0x90;
-    const SET_CURSOR_ON_BLINK_OFF = 0x92;
-    const SET_CURSOR_ON_BLINK_ON = 0x93;
-    const SET_TEXT_ON_GRAPHIC_OFF = 0x94;
-    const SET_TEXT_OFF_GRAPHIC_ON = 0x98;
-    const SET_TEXT_ON_GRAPHIC_ON = 0x9C;
-    const SET_TEXT_ON_GRAPHIC_OFF_CURSOR_ON_BLINK_ON = 0x97;
-    const SET_TEXT_OFF_GRAPHIC_ON_CURSOR_ON_BLINK_ON = 0x9B;
-    const SET_TEXT_ON_GRAPHIC_ON_CURSOR_ON_BLINK_ON = 0x9F;
 
     // read/write
     const SET_AUTO_WRITE = 0xB0;
@@ -102,8 +89,18 @@ function RA6963() {
         let x = startX;
         let y = startY;
         for(let charHeight = 0; charHeight < 8; charHeight++) {
-            let byte_column = font[charCode][charHeight];
-            for(let bit = 1; bit < 7; bit++) {
+            let byte_column = 0;
+            if (charCode >= 0x00 && charCode <= 0x7F) {
+                // internal CGRAM mode
+                byte_column = font[charCode][charHeight];
+            } else if (charCode >= 0x80 && charCode <= 0xFF) {
+                // external CGRAM mode
+                // TODO: fix
+                byte_column = vram[(0x800 * offsetRegister) + ((charCode - 32) * 8) + charHeight];
+            } else {
+                return;
+            }
+            for(let bit = 7; bit >= 0; bit--) {
                 if ((byte_column >> bit) & 0x01) {
                     canvasSetPixelState(x, y);
                 }
@@ -205,9 +202,7 @@ function RA6963() {
             for (let displayTextY = 0; displayTextY < DISPLAY_HEIGHT_BYTES; displayTextY++) {
                 for (let displayTextX = 0; displayTextX < DISPLAY_WIDTH_BYTES; displayTextX++) {
                     const charCode = vram[textHomeAddressPtr + (displayTextY * DISPLAY_WIDTH_BYTES) + displayTextX];
-                    if (charCode >= 0x20 && charCode <= 0x7E) {
-                        canvasDrawChar(displayTextX * FONT_WIDTH, displayTextY * FONT_HEIGHT, charCode);
-                    }
+                    canvasDrawChar(displayTextX * FONT_WIDTH, displayTextY * FONT_HEIGHT, charCode);
                 }
             }
         }

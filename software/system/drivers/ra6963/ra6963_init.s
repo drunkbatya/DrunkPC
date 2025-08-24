@@ -7,7 +7,7 @@ ra6963_init:
     push af
     push hl
 
-    call ra6963_custom_font_init
+    ;call ra6963_custom_font_init
 
     ; set text home address
     ld hl, 0
