@@ -1,4 +1,5 @@
 function RA6963() {
+    const TAG = "RA6963";
     // font
     const FONT_OFFSET = 32;
     const FONT_WIDTH = 6;
@@ -170,10 +171,10 @@ function RA6963() {
                 offsetRegister = prevData2 & 0xFF;
                 break;
             case SET_TEXT_AREA:
-                console.log(`RA6963: set text area command isn't implemented yet`);
+                console.log(TAG + `: set text area command isn't implemented yet`);
                 break;
             case SET_GRAPHIC_AREA:
-                console.log(`RA6963: set graphic area command isn't implemented yet`);
+                console.log(TAG + `: set graphic area command isn't implemented yet`);
                 break;
             default:
                 if ((value >> 4) == 0x09) {  // set mode command
@@ -184,9 +185,9 @@ function RA6963() {
                 } else if ((value >> 3) == 0x14) {  // set cursor pattern command
                     cursorHeight = (value & 0x07) + 1;
                 } else if ((value >> 4) == 0x08) {  // mode set command
-                    console.log(`RA6963: mode set command isn't implemented yet`);
+                    console.log(TAG + `: mode set command isn't implemented yet`);
                 } else {
-                    console.log(`RA6963: unknown cmd 0x${toHexStr(value, 2)}`);
+                    console.log(TAG + `: unknown cmd 0x${toHexStr(value, 2)}`);
                 }
         }
     }
