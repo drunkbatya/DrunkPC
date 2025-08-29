@@ -2,16 +2,27 @@
 #	@echo "\tASSETS\t" $@
 #	@$(ASSETS_COMPILER) $(ASSETSSRCDIR) $(ASSETSBUILDDIR)
 
+$(BUILDDIR):
+	@mkdir -p $@
+
 $(BUILDDIR)/%.s: %.tmpl $(TMPL_SOURCES) $(ASM_INCLUDES) $(MAKE_FILES) | $(BUILDDIR)
 	@echo "\tTMPL\t" $<
+	@mkdir -p $(@D)
 	@$(TMPL_ENVS) $(ENVSUBST) < $< > $@
 
 #$(BUILDDIR)/%.o: %.s $(ASSETSBUILDDIR)/$(ASSETSTARGET) $(ASM_INCLUDES) $(MAKE_FILES) | $(BUILDDIR)
 $(BUILDDIR)/%.o: %.s $(ASM_INCLUDES) $(MAKE_FILES) | $(BUILDDIR)
 	@echo "\tASM\t" $<
+	@mkdir -p $(@D)
 	@$(AS) $(ASMFLAGS) $< -o $@
 
-$(BUILDDIR)/$(TARGET).elf: $(TEMPLATES) $(OBJECTS) $(MAKE_FILES)
+$(TMPL_OBJS): $(BUILDDIR)/%.o : $(BUILDDIR)/%.s $(ASM_INCLUDES) $(MAKE_FILES) | $(BUILDDIR)
+	@echo "\tASM\t" $<
+	@mkdir -p $(@D)
+	@$(AS) $(ASMFLAGS) $< -o $@
+
+#$(BUILDDIR)/$(TARGET).elf: $(TEMPLATES) $(OBJECTS) $(MAKE_FILES)
+$(BUILDDIR)/$(TARGET).elf: $(OBJECTS) $(MAKE_FILES) | $(BUILDDIR)
 	@echo "\tLD\t" $@
 	@$(LD) $(LDFLAGS) $(OBJECTS) -o $@
 	@echo "\tSIZE\t" $@

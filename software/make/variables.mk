@@ -9,23 +9,31 @@ ASSETSTARGET = assets_icons.s
 INCLUDE = -Isystem -Ilib/stdlib -Ilib
 
 TMPL_SOURCES += $(shell find . -not -path '*/sandbox/*' -not -path '*/.*' -type f -name "*.tmpl")
+TMPL_SOURCES := $(patsubst ./%,%,$(TMPL_SOURCES))
 
 #ASM_SOURCES += $(ASSETSBUILDDIR)/$(ASSETSTARGET)
-ASM_SOURCES += $(shell find . -not -path '*/assets/*' -not -path '*/sandbox/*' -not -path '*/.*' -type f -name "*.s")
+#ASM_SOURCES += $(shell find . -not -path '*/assets/*' -not -path '*/sandbox/*' -not -path '*/.*' -type f -name "*.s")
+ASM_SOURCES += $(shell find . \
+	-not -path '*/build/*' \
+	-not -path '*/assets/*' -not -path '*/sandbox/*' -not -path '*/.*' \
+	-type f -name "*.s")
 ASM_INCLUDES += $(shell find . -not -path '*/assets/*' -not -path '*/sandbox/*' -not -path '*/.*' -type f -name "*.inc")
+ASM_SOURCES  := $(patsubst ./%,%,$(ASM_SOURCES))
 
 #ASSETS_SOURCES = $(shell find ${ASSETSSRCDIR} -type f -name "*.png")
 
 TEMPLATES += $(addprefix $(BUILDDIR)/, $(TMPL_SOURCES:.tmpl=.s))
-
 OBJECTS += $(addprefix $(BUILDDIR)/, $(ASM_SOURCES:.s=.o))
+TMPL_OBJS := $(TEMPLATES:.s=.o)
+OBJECTS   += $(TMPL_OBJS)
 #OBJECTS += $(addprefix $(BUILDDIR)/, $(TMPL_SOURCES:.tmpl=.o))
 
 OBJECT_DIRS = $(sort $(dir $(OBJECTS)))
-$(foreach dir, $(OBJECT_DIRS),$(shell mkdir -p $(dir)))
+#$(foreach dir, $(OBJECT_DIRS),$(shell mkdir -p $(dir)))
 
 TMPL_DIRS = $(sort $(dir $(TEMPLATES)))
-$(foreach dir, $(TMPL_DIRS),$(shell mkdir -p $(dir)))
+#$(foreach dir, $(TMPL_DIRS),$(shell mkdir -p $(dir)))
+
 
 MAKE_FILES = $(shell find make -not -path '*/sandbox/*' -not -path '*/.*' -type f -name "*.mk")
 
