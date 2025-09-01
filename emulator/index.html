@@ -6,12 +6,14 @@
                 width: 960px;
                 height: 256px;
                 image-rendering: pixelated;
-                background: darkblue;
+                background: rgb(30, 30, 30);
+            }
+            #page {
+                background: rgb(18, 18, 18);
             }
         </style>
     </head>
-    <body>
-        <a href="javascript:z80.reset()">Reset</a>
+    <body id="page">
         <canvas width=240 height=64 id="video"></canvas>
         <script src="js/helpers.js"></script>
         <script src="js/font6x8.js"></script>
@@ -19,6 +21,7 @@
         <script src="js/RA6963.js"></script>
         <script src="js/keyboard.js"></script>
         <script src="js/firmware.js"></script>
+        <script src="js/firmware_updater_cf_image.js"></script>
         <script src="js/compactFlash.js"></script>
         <script src="js/DrunkPC.js"></script>
     </body>

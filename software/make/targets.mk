@@ -1,6 +1,8 @@
 all: $(BUILDDIR)/$(TARGET).elf $(BUILDDIR)/$(TARGET).bin
 
-emulator_dist: all $(BUILDDIR)/$(TARGET).js
+emulator_dist: all updater_image $(BUILDDIR)/$(TARGET).js $(BUILDDIR)/$(TARGET)_updater_cf_image.js
+
+updater_image: all $(BUILDDIR)/$(TARGET)_updater_cf_image.img
 
 .PHONY: disasm
 disasm: $(BUILDDIR)/$(TARGET).elf

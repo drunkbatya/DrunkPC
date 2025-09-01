@@ -23,6 +23,7 @@ FEATURE_4BYTE_RW_LONG = 0xBB
 CMD_SET_FEATURE = 0xEF
 CMD_READ_INFO = 0xEC
 CMD_READ_SECTOR = 0x20
+CMD_WRITE_SECTOR = 0x30
 
 ; Drive Head Register values
 COMPACT_FLASH_MASTER_LBA_MODE = 0xE0
@@ -33,9 +34,14 @@ COMPACT_FLASH_MASTER_LBA_MODE = 0xE0
 .global compactflash_init
 .global compactflash_check_error
 .global compactflash_set_lba_addr
+.global compactflash_set_lba_addr_test
 .global compactflash_read_data
+.global compactflash_read_id
+.global compactflash_write_data
+.global compactflash_read_bytes_sequentially
 
 ; variables
 .global compactflash_sector_buf
+.global compactflash_init_done
 
 ; vim: set ft=asm:

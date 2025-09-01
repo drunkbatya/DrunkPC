@@ -38,3 +38,6 @@ compactflash_check_error_end:
     pop af  ; restoring af
     ret
 
+.section .bss
+compactflash_init_done:
+    .skip 1

@@ -11,5 +11,6 @@
 .global memchr
 .global memrchr
 .global memswap
+.global memcmp
 
 ; vim: set ft=asm:

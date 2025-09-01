@@ -78,8 +78,10 @@ function CompactFlash() {
 
     const blockSize = 512;
     const CFSize = 256 * 1024 * 1024;
+    const maxLBA = CFSize / blockSize;
 
     let data = new Uint8Array(CFSize);
+    console.log(TAG + `: init done, size: ${CFSize} bytes (${CFSize / 1024 / 1024} Mbytes), max LBA: ${maxLBA} (0x${toHexStr((maxLBA), 8)})`)
 
     // emulation enums
     const Mode = {
@@ -105,6 +107,10 @@ function CompactFlash() {
         return data;
     }
 
+    this.loadData = function(newData) {
+        for (let n = 0; n < newData.length; n++) { data[n] = newData[n] };
+    }
+
     this.write = function(addr, value) {
         // console.log(TAG + `: write, addr: 0x${toHexStr(addr, 2)}, value 0x${toHexStr(value, 2)}`);
         switch (addr) {
@@ -124,15 +130,22 @@ function CompactFlash() {
                 break;
             case COMPACT_FLASH_LBA0:
                 lbaPtr = ((lbaPtr & 0xFFFFFF00 | ((value & 0xFF) << 0)) >>> 0);
+                //console.log(TAG + `: set lba0, current: ${toHexStr(lbaPtr, 8)}`)
                 break;
             case COMPACT_FLASH_LBA1:
                 lbaPtr = ((lbaPtr & 0xFFFF00FF | ((value & 0xFF) << 8)) >>> 0);
+                //console.log(TAG + `: set lba1, current: ${toHexStr(lbaPtr, 8)}`)
                 break;
             case COMPACT_FLASH_LBA2:
                 lbaPtr = ((lbaPtr & 0xFF00FFFF | ((value & 0xFF) << 16)) >>> 0);
+                //console.log(TAG + `: set lba2, current: ${toHexStr(lbaPtr, 8)}`)
                 break;
             case COMPACT_FLASH_LBA3:
                 lbaPtr = ((lbaPtr & 0x00FFFFFF | ((value & 0x0F) << 24)) >>> 0);
+                if (lbaPtr > maxLBA) {
+                    throw new Error(TAG+ `: attempting to set LBA address wich out of max CF LBA (current: ${lbaPtr}, max: ${maxLBA})`);
+                }
+                //console.log(TAG + `: set lba3, current: ${toHexStr(lbaPtr, 8)}`)
                 break;
             case COMPACT_FLASH_CMD:
                 if (value == CMD_READ_INFO) {

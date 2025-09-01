@@ -10,12 +10,21 @@
 cf_info_main:
     push hl  ; storing hl
 
+    ld a, (compactflash_init_done)  ; checking if init already completed
+    or a
+    jr nz, ckip_cf_init
+
     call compactflash_init
     pop hl
+ckip_cf_init:
 
+    ld hl, 0x0001
+    push hl  ; arg2 of compactflash_set_lba_addr
+    ld hl, 0x2345
+    push hl  ; arg1 of compactflash_set_lba_addr
     call compactflash_set_lba_addr
-    call compactflash_read_data
-    pop hl  ; compactflash_read_data return value
+    call compactflash_read_id
+    pop hl  ; compactflash_read_id return value
     ld a, l  ; cheking success
     or a
     jp z, cf_read_fail  ; exiting immidiately if no success

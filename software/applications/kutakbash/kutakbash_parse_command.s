@@ -6,6 +6,8 @@
 .include "applications/disp_ptr/disp_ptr.inc"
 .include "applications/less/less.inc"
 .include "applications/cf_info/cf_info.inc"
+.include "applications/cf_test/cf_test.inc"
+.include "applications/updater/updater.inc"
 
 .section .text
 
@@ -115,8 +117,16 @@ internal_commands:  ; TODO: separate this to compile-time templated file
     .word cf_info_name
     .word cf_info_main
     ; cf_info
+    ; cf_test
+    .word cf_test_name
+    .word cf_test_main
+    ; cf_test
     ; uname
     .word uname_name
     .word uname_main
     ; uname
+    ; updater
+    .word updater_name
+    .word updater_main
+    ; updater
 internal_commands_end:  ; just to know the size..

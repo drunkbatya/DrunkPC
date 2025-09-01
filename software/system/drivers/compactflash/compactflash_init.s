@@ -65,16 +65,17 @@ compactflash_init:
     or a  ; check if success
     jr z, compactflash_init_fail  ; return false if fail
 compactflash_init_success:
-    ld hl, compactflash_init_success_msg
-    push hl
-    call putstr
     ld (ix + 0), 1  ; returning success true
+    ld a, 1
+    ld (compactflash_init_done), a
     jr compactflash_init_end
 compactflash_init_fail:
     ld hl, compactflash_init_fail_msg
     push hl
     call putstr
     ld (ix + 0), 0  ; returning success false
+    ld a, 0
+    ld (compactflash_init_done), a
 compactflash_init_end:
     pop bc  ; restoring bc
     pop hl  ; restoring hl
@@ -83,7 +84,5 @@ compactflash_init_end:
     ret
 
 .section .rodata
-compactflash_init_success_msg:
-    .asciz "CompactFlash init done!\n"
 compactflash_init_fail_msg:
-    .asciz "CompactFlash init fail!\n"
+    .asciz "CF init fail"

@@ -1,7 +1,7 @@
 .include "hardware/io.inc"
 .include "drivers/compactflash/compactflash.inc"
 
-COMPACT_FLASH_AWAIT_TIMEOUT = 128
+COMPACT_FLASH_AWAIT_TIMEOUT = 512
 
 ; About:
 ;   Waits n iterations until CF is busy for recive (transfer) a data, returns false in case of time out

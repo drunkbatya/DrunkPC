@@ -5,6 +5,17 @@
 $(BUILDDIR):
 	@mkdir -p $@
 
+$(BUILDDIR)/$(TARGET)_updater_cf_image.img: $(BUILDDIR)/$(TARGET).bin
+	@echo "\tMKIMG\t" $@
+	@mkdir -p $(@D)
+	@$(UPDATE_IMAGE_GEN) \
+		--firmware_file "$<" \
+		--output_file "$@" \
+		--git_tag "$(VERSION)" \
+		--git_branch "$(GIT_BRANCH)" \
+		--git_hash "$(GIT_COMMIT)" \
+		--build_date "$(BUILD_DATE)"
+
 $(BUILDDIR)/%.s: %.tmpl $(TMPL_SOURCES) $(ASM_INCLUDES) $(MAKE_FILES) | $(BUILDDIR)
 	@echo "\tTMPL\t" $<
 	@mkdir -p $(@D)
@@ -33,6 +44,12 @@ $(BUILDDIR)/%.bin: $(BUILDDIR)/%.elf | $(BUILDDIR)
 	@$(BIN) $< $@
 
 $(BUILDDIR)/%.js: $(BUILDDIR)/%.bin
+	@echo "\tXXD\t" $@
+	@echo "const $(basename $(notdir $<)) = [" > $@
+	@xxd -i $< | tail -n +2 | sed '$$d' | sed '$$d' >> $@
+	@echo "];" >> $@
+
+$(BUILDDIR)/%.js: $(BUILDDIR)/%.img
 	@echo "\tXXD\t" $@
 	@echo "const $(basename $(notdir $<)) = [" > $@
 	@xxd -i $< | tail -n +2 | sed '$$d' | sed '$$d' >> $@

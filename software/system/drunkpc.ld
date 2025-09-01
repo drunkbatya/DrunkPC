@@ -3,7 +3,7 @@ ENTRY(reset_handler)
 _min_stack_size = 5K;
 
 MEMORY {
-    FLASH (rx) : ORIGIN = 0x0000, LENGTH = 16K
+    FLASH (xrw) : ORIGIN = 0x0000, LENGTH = 16K
     SRAM (xrw) : ORIGIN = 0x4000, LENGTH = 48K
 }
 
@@ -46,4 +46,8 @@ SECTIONS {
     _sheap = .;
     _eheap = ORIGIN(SRAM) + LENGTH(SRAM) - _min_stack_size;
     _heap_size = _eheap - _sheap;
+
+    _sflash = ORIGIN(FLASH);
+    _eflash = _sflash + LENGTH(FLASH) - 1;
+
 }

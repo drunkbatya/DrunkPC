@@ -80,9 +80,9 @@ function RA6963() {
         }
         const canvasBytesPerPixel = 4;
         let arrStart = (x * canvasBytesPerPixel) + (y * (canvas.width * canvasBytesPerPixel));
-        canvasData.data[arrStart + 0] = 255; // R
-        canvasData.data[arrStart + 1] = 0;   // G
-        canvasData.data[arrStart + 2] = 0;   // B
+        canvasData.data[arrStart + 0] = 198; // R
+        canvasData.data[arrStart + 1] = 83;   // G
+        canvasData.data[arrStart + 2] = 57;   // B
         canvasData.data[arrStart + 3] = 255; // A
     }
 

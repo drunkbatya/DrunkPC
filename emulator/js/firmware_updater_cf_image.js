@@ -1,0 +1,1 @@
+../../software/build/firmware_updater_cf_image.js

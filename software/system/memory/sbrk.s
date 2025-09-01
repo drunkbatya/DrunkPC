@@ -1,4 +1,4 @@
-.include "string/string.inc"
+.include "system/memory/memory.inc"
 
 ; About:
 ;   Contol main heap size
