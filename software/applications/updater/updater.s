@@ -248,29 +248,26 @@ update_system:
         ld a, b  ; loading one of the size bytes to a to check if bc==0
         or c  ; check if bc==0
         jr z, update_system_erase_flash_loop_end  ; break if all flash is wiped
-        ld (hl), 0  ; filling current byte
+        ld e, 0  ; filling current byte
+        call eep_write_byte
         inc hl  ; inrementing flash ptr
         dec bc  ; decrementing size counter
         jr update_system_erase_flash_loop  ; loop
     update_system_erase_flash_loop_end:
     ; flashing the new firmware
-    ld hl, (new_firmware_in_ram_address)  ; reading address in ram with the new firmware
+    ld de, (new_firmware_in_ram_address)  ; reading address in ram with the new firmware
     ld bc, (update_size)  ; reading update size
-    ld de, _sflash  ; target flash addr
+    ld hl, _sflash  ; target flash addr
     update_system_loop:
         ld a, b  ; loading one of the size bytes to a to check if bc==0
         or c  ; check if bc==0
         jr z, update_system_loop_end  ; break if all flash is wiped
-        ld a, (hl)  ; loading byte from ram
-        push hl
+
         push de
-
-        push hl
-        pop de
+        ld a, (de)  ; loading byte from ram
+        ld e, a  ; storing a in e
         call eep_write_byte
-
         pop de
-        pop hl
 
         inc de
         inc hl
