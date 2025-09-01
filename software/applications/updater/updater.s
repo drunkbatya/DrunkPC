@@ -75,7 +75,6 @@ ckip_cf_init:
     push hl  ; arg3 of memcmp
     ld hl, updater_cf_header
     push hl  ; arg2 of memcmp
-    cf_bufff:
     ld hl, compactflash_sector_buf
     push hl  ; arg1 of memcmp
     call memcmp  ; checking if updater header present in CF block 0
@@ -118,37 +117,37 @@ ckip_cf_init:
     call terminal_putchar
 
     ; trying to write flash using a different patterns to ensure this writable
-    ;ld hl, cf_checking_flash_write
-    ;push hl
-    ;call putstr
+    ld hl, cf_checking_flash_write
+    push hl
+    call putstr
 
     ;; the first
-    ;ld a, 0x55
-    ;ld (flash_write_test_byte), a
-    ;call ram_loop
-    ;ld a, (flash_write_test_byte)
-    ;cp 0x55
-    ;jp nz, cf_print_fail
+    ld e, 0x55
+    ld hl, flash_write_test_byte
+    call eep_write_byte
+    ld a, (flash_write_test_byte)
+    cp 0x55
+    jp nz, cf_print_fail
 
-    ;; the second
-    ;ld a, 0xAA
-    ;ld (flash_write_test_byte), a
-    ;call ram_loop
-    ;ld a, (flash_write_test_byte)
-    ;cp 0xAA
-    ;jp nz, cf_print_fail
+    ; the second
+    ld e, 0xAA
+    ld hl, flash_write_test_byte
+    call eep_write_byte
+    ld a, (flash_write_test_byte)
+    cp 0xAA
+    jp nz, cf_print_fail
 
-    ;; the third
-    ;ld a, 0
-    ;ld (flash_write_test_byte), a
-    ;call ram_loop
-    ;ld a, (flash_write_test_byte)
-    ;cp 0
-    ;jp nz, cf_print_fail
+    ; the third
+    ld e, 0
+    ld hl, flash_write_test_byte
+    call eep_write_byte
+    ld a, (flash_write_test_byte)
+    cp 0
+    jp nz, cf_print_fail
 
-    ;ld hl, done
-    ;push hl
-    ;call putstr
+    ld hl, done
+    push hl
+    call putstr
 
     ; loading update size, and allocting memmory
     ld hl, cf_checking_avaliable_ram
@@ -263,35 +262,35 @@ update_system:
         or c  ; check if bc==0
         jr z, update_system_loop_end  ; break if all flash is wiped
         ld a, (hl)  ; loading byte from ram
-        ld (de), a  ; flashing flash
-        ld (de), a  ; flashing flash
-        ld (de), a  ; flashing flash
-        ld (de), a  ; flashing flash
+        push hl
+        push de
+
+        push hl
+        pop de
+        call eep_write_byte
+
+        pop de
+        pop hl
+
         inc de
         inc hl
         dec bc
-        call ram_loop
-        call ram_loop
-        call ram_loop
-        call ram_loop
         jr update_system_loop
     update_system_loop_end:
     ;ldir  ; repeats 'ld (de), (hl)' then increments de, hl, and decrements bc until bc=0
     jp _sflash  ; booting new firmware
-ram_loop:
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    ret
+
+eep_write_byte:
+        ld      a,e
+        ld      (hl),a
+
+.poll_d7:
+        ld      a,(hl)
+        xor     e
+        and     0x80
+        jr      nz,.poll_d7
+
+        ret
 
 
 .section .rodata
