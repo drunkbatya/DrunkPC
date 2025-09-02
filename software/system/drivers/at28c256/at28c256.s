@@ -51,7 +51,6 @@ at28c256_write_bytes:
         inc de  ; going to the next byte
         jr at28c256_write_bytes_loop
     at28c256_write_bytes_loop_end:
-
     pop bc  ; restoring bc
     pop de  ; restoring de
     pop hl  ; restoring hl
@@ -129,7 +128,7 @@ at28c256_erase:
     push hl  ; storing hl
     push bc  ; storing bc
 
-    ld bc, _eflash  ; _eflash (end of flash) is defined by linker script
+    ld bc, _flash_size  ; _eflash (end of flash) is defined by linker script
     ld hl, _sflash  ; _sflash (start of flash) is defined by linker script
     ld (at28c256_write_bytes_last_addr), hl  ; resetting last address
     at28c256_erase_loop:
@@ -188,7 +187,7 @@ is_at28c256_page_is_same:
     ld e, a
 
     ; is the same page?
-    ld a, 0  ; just to clear the carry flag
+    xor a  ; just to clear the carry flag
     sbc hl, de  ; comparing addressed, z=1 if true
 
     pop de  ; restoring de

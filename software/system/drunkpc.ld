@@ -48,6 +48,7 @@ SECTIONS {
     _heap_size = _eheap - _sheap;
 
     _sflash = ORIGIN(FLASH);
-    _eflash = _sflash + LENGTH(FLASH) - 1;
+    _flash_size = LENGTH(FLASH);
+    _eflash = _sflash + _flash_size - 1;
 
 }

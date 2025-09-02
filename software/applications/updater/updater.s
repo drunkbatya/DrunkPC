@@ -232,7 +232,7 @@ new_firmware_in_ram_address:
 .section .data
 update_system:
     ; erasing the flash
-    ;call at28c256_erase
+    call at28c256_erase
     ; flashing the new firmware
     ld hl, (update_size)  ; reading update size
     push hl  ; arg3 of at28c256_write_bytes
