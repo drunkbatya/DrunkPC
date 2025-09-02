@@ -37,7 +37,7 @@ function writeMemmory(addr, value) {
     } else {
         if (romLocked) {
             console.log(
-                "Failed write to ROM because it locked! " +
+                "Writing to locked ROM! " +
                 `Address: ${toHexStr(addr)}, ` +
                 `value: ${toHexStr(value)}}`
             );

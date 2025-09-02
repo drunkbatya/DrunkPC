@@ -67,42 +67,6 @@ at28c256_write_bytes:
     exx  ; restoring registers
     ret
 
-; About:
-;    Copy an array pointed by src to Flash pointed by dst
-; Args:
-;   uint8_t* addr - dst address in flash
-;   uint8_t byte - src byte
-; Return:
-;   None
-; C Prototype:
-;   void at28c256_write_byte(uint8_t* dst, uint8_t byte);
-at28c256_write_byte:
-    push af  ; storing af
-    push ix  ; storing ix
-    push hl  ; storing hl
-
-    ld ix, 8  ; there is no way to set load sp value to ix, skipping pushed 3 args and return address
-    add ix, sp  ; loading sp value to ix
-
-    ld l, (ix + 0)  ; dst addr, low byte
-    ld h, (ix + 1)  ; dst addr, high byte
-    ld a, (ix + 2)  ; byte to write
-
-    ld (hl), a  ; flashing byte
-    call at28c256_poll_d7  ; waiting write cycle completion
-
-    pop hl  ; restoring hl
-    pop ix  ; restoring ix
-    pop af  ; restoring af
-
-    exx  ; exchanging register pairs with their shadow
-    pop hl  ; return address
-    pop bc  ; removing arg1
-    pop bc  ; removing arg2
-    push hl  ; return address
-    exx  ; restoring registers
-    ret
-
 at28c256_check_is_writable:
     exx  ; exchanging register pairs with their shadow
     pop hl  ; return address
@@ -112,11 +76,8 @@ at28c256_check_is_writable:
 
     push af  ; storing af
     push ix  ; storing ix
-    push hl  ; stroing hl
-    push de  ; stroing de
-    push bc  ; stroing bc
 
-    ld ix, 12  ; there is no way to set load sp value to ix, skipping pushed 3 reg pairs and the return address
+    ld ix, 6  ; there is no way to set load sp value to ix, skipping pushed 3 reg pairs and the return address
     add ix, sp  ; loading sp value to ix
 
     ; first test byte
@@ -151,9 +112,6 @@ at28c256_check_is_writable:
     at28c256_check_is_writable_true:
     ld (ix + 0), 1  ; returning success true
 at28c256_check_is_writable_end:
-    pop bc  ; restoring bc
-    pop de  ; restroing de
-    pop hl  ; restoring hl
     pop ix  ; restoring ix
     pop af  ; restoring af
     ret
@@ -199,6 +157,7 @@ at28c256_erase:
 ; Z80 @ 4 MHz: 1 T-state = 0.25 µs → 10 ms = 40 000 T
 ; Summary: 7 + 15*(7 + (17*146-5) + 4 + 12) + (7 + (17*146-5) + 4 + 7) = 40 002 T ~= 10.0005 ms
 delay_10_ms_ram:
+    push bc  ; storing bc
     ld c, 16  ; 7T
 delay_10_ms_ram_c_loop:
     ld b, 146  ; 7T
@@ -207,6 +166,7 @@ delay_10_ms_ram_b_loop:
     djnz delay_10_ms_ram_b_loop  ; 13T (taken), 8T (final)
     dec c  ; 4T
     jr nz, delay_10_ms_ram_c_loop  ; 12T (taken 15 times), 7T (last)
+    pop bc  ; restoring bc
     ret
 
 ; internal!
@@ -215,7 +175,7 @@ is_at28c256_page_is_same:
     push hl  ; storing hl
     push de  ; storing de
 
-    ld de,(at28c256_write_bytes_last_addr)  ; loading old address
+    ld de, (at28c256_write_bytes_last_addr)  ; loading old address
 
     ; HL := base(new) = (H:L & 0xFFC0)
     ld a, l  ; applying 0xC0 to lower bytes
@@ -257,7 +217,7 @@ at28c256_poll_d7_loop:
 ; we will try to write this byte
 ; to ensure the flash is writable
 flash_write_test_byte:
-    .byte 0x00
+    .byte 0x00, 0x00
 
 .section .bss
 at28c256_write_bytes_last_addr:

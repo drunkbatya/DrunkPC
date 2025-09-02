@@ -124,7 +124,7 @@ ckip_cf_init:
 
     call at28c256_check_is_writable
     pop hl  ; return byte
-    ld a, h  ; return status
+    ld a, l;  ; return status
     or a  ; check error
     jp z, cf_print_fail  ; exit if error
 
@@ -232,7 +232,7 @@ new_firmware_in_ram_address:
 .section .data
 update_system:
     ; erasing the flash
-    call at28c256_erase
+    ;call at28c256_erase
     ; flashing the new firmware
     ld hl, (update_size)  ; reading update size
     push hl  ; arg3 of at28c256_write_bytes
