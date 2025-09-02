@@ -36,7 +36,7 @@ at28c256_write_bytes:
         ; check is new adress in the same page with the previous
         call is_at28c256_page_is_same
         jr z, at28c256_write_bytes_loop_page_shift_skip  ; writing next byte if true
-        call at28c256_poll_d7  ; waiting write cycle end
+        call at28c256_poll_d7  ; waiting write cycle end, address+1 in hl, written byte in a
         at28c256_write_bytes_loop_page_shift_skip:
         ld (at28c256_write_bytes_last_addr), hl  ; resetting last address
 
@@ -135,6 +135,7 @@ at28c256_erase:
         ; check is new adress in the same page with the previous
         call is_at28c256_page_is_same
         jr z, at28c256_erase_loop_page_shift_skip  ; writing next byte if true
+        ld a, 0  ; written byte
         call at28c256_poll_d7  ; waiting write cycle end
         at28c256_erase_loop_page_shift_skip:
         ld (at28c256_write_bytes_last_addr), hl  ; resetting last address
@@ -173,6 +174,9 @@ delay_10_ms_ram_b_loop:
 is_at28c256_page_is_same:
     push hl  ; storing hl
     push de  ; storing de
+    push bc  ; storing bc
+
+    ld c, a  ; storing a, without f
 
     ld de, (at28c256_write_bytes_last_addr)  ; loading old address
 
@@ -190,6 +194,9 @@ is_at28c256_page_is_same:
     xor a  ; just to clear the carry flag
     sbc hl, de  ; comparing addressed, z=1 if true
 
+    ld a, c  ; restoring a, without f
+
+    pop bc  ; restoring bc
     pop de  ; restoring de
     pop hl  ; restoring hl
     ret
@@ -199,16 +206,20 @@ is_at28c256_page_is_same:
 ; waits write cycle end
 ; Address in HL
 at28c256_poll_d7:
+    push af  ; storing af
     push de  ; storing de
+
     dec hl  ; going to the previous byte
-    ld e,(hl)  ; loading last written byte in page
+    ld e, a  ; loading last written byte original value from a
 at28c256_poll_d7_loop:
-    ld a,(hl)  ; loading last written byte in page
+    ld a, (hl)  ; loading last written byte in page
     xor e  ; xoring the number with theirself is always should be zero, but not for this chip
     and 0x80  ; looking last bit, should be zero if write completed, and 1 overvise
     jr nz, at28c256_poll_d7_loop  ; looping until success
     inc hl  ; going to the next byte
+
     pop de  ; restoring de
+    pop af  ; restoring af
     ret
 
 .section .rodata
