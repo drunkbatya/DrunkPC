@@ -5,6 +5,7 @@
 .include "system/drivers/compactflash/compactflash.inc"
 .include "lib/stdlib/core/core.inc"
 .include "system/memory/memory.inc"
+.include "drivers/at28c256/at28c256.inc"
 
 .section .text
 
@@ -121,29 +122,11 @@ ckip_cf_init:
     push hl
     call putstr
 
-    ;; the first
-    ld e, 0x55
-    ld hl, flash_write_test_byte
-    call eep_write_byte
-    ld a, (flash_write_test_byte)
-    cp 0x55
-    jp nz, cf_print_fail
-
-    ; the second
-    ld e, 0xAA
-    ld hl, flash_write_test_byte
-    call eep_write_byte
-    ld a, (flash_write_test_byte)
-    cp 0xAA
-    jp nz, cf_print_fail
-
-    ; the third
-    ld e, 0
-    ld hl, flash_write_test_byte
-    call eep_write_byte
-    ld a, (flash_write_test_byte)
-    cp 0
-    jp nz, cf_print_fail
+    call at28c256_check_is_writable
+    pop hl  ; return byte
+    ld a, h  ; return status
+    or a  ; check error
+    jp z, cf_print_fail  ; exit if error
 
     ld hl, done
     push hl
@@ -221,10 +204,17 @@ ckip_cf_init:
         jp _sflash  ; if user typed any other key, rebooting to free out memory, temp workaround before malloc function will exist
     updater_get_input_key_loop_end:
 
+    ld hl, cf_update_wait_msg
+    push hl
+    call putstr
+
     jp update_system  ; jumping to core updater code in RAM, bye bye flash data..
 
     cf_print_fail:
     ld hl, fail
+    push hl
+    call putstr
+    ld hl, cf_update_print_github
     push hl
     call putstr
     updater_end:
@@ -242,61 +232,18 @@ new_firmware_in_ram_address:
 .section .data
 update_system:
     ; erasing the flash
-    ld bc, _eflash  ; _eflash (end of flash) is defined by linker script
-    ld hl, _sflash  ; _sflash (start of flash) is defined by linker script
-    update_system_erase_flash_loop:
-        ld a, b  ; loading one of the size bytes to a to check if bc==0
-        or c  ; check if bc==0
-        jr z, update_system_erase_flash_loop_end  ; break if all flash is wiped
-        ld e, 0  ; filling current byte
-        call eep_write_byte
-        inc hl  ; inrementing flash ptr
-        dec bc  ; decrementing size counter
-        jr update_system_erase_flash_loop  ; loop
-    update_system_erase_flash_loop_end:
+    call at28c256_erase
     ; flashing the new firmware
-    ld de, (new_firmware_in_ram_address)  ; reading address in ram with the new firmware
-    ld bc, (update_size)  ; reading update size
+    ld hl, (update_size)  ; reading update size
+    push hl  ; arg3 of at28c256_write_bytes
+    ld hl, (new_firmware_in_ram_address)  ; reading address in ram with the new firmware
+    push hl  ; arg2 of at28c256_write_bytes
     ld hl, _sflash  ; target flash addr
-    update_system_loop:
-        ld a, b  ; loading one of the size bytes to a to check if bc==0
-        or c  ; check if bc==0
-        jr z, update_system_loop_end  ; break if all flash is wiped
-
-        push de
-        ld a, (de)  ; loading byte from ram
-        ld e, a  ; storing a in e
-        call eep_write_byte
-        pop de
-
-        inc de
-        inc hl
-        dec bc
-        jr update_system_loop
-    update_system_loop_end:
-    ;ldir  ; repeats 'ld (de), (hl)' then increments de, hl, and decrements bc until bc=0
+    push hl  ; arg1 of at28c256_write_bytes
+    call at28c256_write_bytes  ; fire!
     jp _sflash  ; booting new firmware
 
-eep_write_byte:
-        ld      a,e
-        ld      (hl),a
-
-.poll_d7:
-        ld      a,(hl)
-        xor     e
-        and     0x80
-        jr      nz,.poll_d7
-
-        ret
-
-
 .section .rodata
-; this section will go to Flash
-; we will try to write this byte
-; to ensure the flash is writable
-flash_write_test_byte:
-    .byte 0x00, 0x00
-
 updater_name:
     .asciz "update"
 
@@ -325,6 +272,12 @@ cf_copying_firmware_from_cf:
 
 cf_update_dialog:
     .asciz "ready to install, proceed? (N/y)"
+
+cf_update_wait_msg:
+    .asciz "\nupdate in progress, wait.."
+
+cf_update_print_github:
+    .asciz "Please follow update instructions on:   https://github.com/drunkbatya/DrunkPC\n"
 
 updater_cf_header:
     .byte 0x44,0x52,0x55,0x4e,0x4b,0x4f,0x53,0x55,0x50,0x44,0x41,0x54,0x45,0x52,0x52,0x00

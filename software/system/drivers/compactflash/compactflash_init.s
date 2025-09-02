@@ -85,4 +85,4 @@ compactflash_init_end:
 
 .section .rodata
 compactflash_init_fail_msg:
-    .asciz "CF init fail"
+    .asciz "CF init fail\n"
