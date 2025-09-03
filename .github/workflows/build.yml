@@ -1,0 +1,30 @@
+name: 'Build'
+
+on:
+  push:
+    branches:
+      - dev
+    tags:
+      - '*'
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: 'Set up Docker Buildx'
+        uses: docker/setup-buildx-action@v3
+
+      - name: 'Build firmware'
+        run: |
+          docker run \
+              -v $(pwd):/src \
+              ghcr.io/drunkbatya/binutils-z80-elf:2.45 \
+              bash -c 'cd /src/software && make && make updater_image && make emulator_dist'
+
