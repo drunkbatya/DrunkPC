@@ -51,6 +51,7 @@ at28c256_write_bytes:
         inc de  ; going to the next byte
         jr at28c256_write_bytes_loop
     at28c256_write_bytes_loop_end:
+    call at28c256_poll_d7  ; to wait after the last page write
     pop bc  ; restoring bc
     pop de  ; restoring de
     pop hl  ; restoring hl
@@ -148,6 +149,8 @@ at28c256_erase:
         dec bc  ; decrementing size counter
         jr at28c256_erase_loop  ; loop
     at28c256_erase_loop_end:
+    ld a, 0  ; written byte
+    call at28c256_poll_d7  ; to wait after the last page write
     pop bc  ; restoring bc
     pop hl  ; restoring hl
     pop af  ; restoring af
@@ -204,7 +207,7 @@ is_at28c256_page_is_same:
 
 ; internal!
 ; waits write cycle end
-; Address in HL
+; Address in HL, value in a
 at28c256_poll_d7:
     push af  ; storing af
     push de  ; storing de
