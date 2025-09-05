@@ -63,6 +63,7 @@ function RA6963() {
     let autoWrite = false;
     let cursorHeight = 1;
     let offsetRegister = 0;
+    let dataReadByte = 0x00;
 
     function getCharCodeFromCurrentChar() {
         let num = prevData1;
@@ -74,16 +75,20 @@ function RA6963() {
         addressPtr = value & 0xFFFF;
     }
 
-    function canvasSetPixelState(x, y) {
+    function canvasSetPixelState(x, y, setPixel = true) {
         if (x < 0 || x > (canvas.width - 1) || y < 0 || y > (canvas.height - 1)) {
+            console.log(`Aaa, ${x}, ${y}`)
             return;
         }
         const canvasBytesPerPixel = 4;
         let arrStart = (x * canvasBytesPerPixel) + (y * (canvas.width * canvasBytesPerPixel));
-        canvasData.data[arrStart + 0] = 198; // R
-        canvasData.data[arrStart + 1] = 83;   // G
-        canvasData.data[arrStart + 2] = 57;   // B
-        canvasData.data[arrStart + 3] = 255; // A
+        if (setPixel) {
+            canvasData.data[arrStart + 0] = 198; // R
+            canvasData.data[arrStart + 1] = 83;   // G
+            canvasData.data[arrStart + 2] = 57;   // B
+            canvasData.data[arrStart + 3] = 255; // A
+        } else {
+        }
     }
 
     function canvasDrawChar(startX, startY, charCode) {
@@ -130,7 +135,9 @@ function RA6963() {
 
     this.writeData = function (value) {
         if (autoWrite) {
-            value += FONT_OFFSET;
+            if (textMode) {
+                value += FONT_OFFSET;
+            }
             vram[addressPtr] = value & 0xFF;
             addressPtr = (addressPtr + 1) & 0xFFFF;
         } else {
@@ -139,14 +146,39 @@ function RA6963() {
         }
     }
 
+    this.getVRam = function() {
+        return vram;
+    }
+
+    this.fillVRam = function (data) {
+        for (let n = 0; n < data.length; n++) {
+            vram[n] = data[n]
+        };
+    }
+
+    this.getGraphicHomeAddressPtr = function() {
+        return graphicHomeAddressPtr;
+    }
+
     this.writeCmd = function(value) {
         switch (value) {
             case DATA_WRITE_AND_INC_ADDR:
-                vram[addressPtr] = getCharCodeFromCurrentChar();;
+                if(textMode) {
+                    vram[addressPtr] = getCharCodeFromCurrentChar();
+                } else {
+                    vram[addressPtr] = prevData1;
+                }
                 addressPtr = (addressPtr + 1) & 0xFFFF;
                 break;
             case DATA_WRITE:
-                vram[addressPtr] = getCharCodeFromCurrentChar();;
+                if (textMode) {
+                    vram[addressPtr] = getCharCodeFromCurrentChar();
+                } else {
+                    vram[addressPtr] = prevData1;
+                }
+                break;
+            case DATA_READ:
+                dataReadByte = vram[addressPtr];
                 break;
             case SET_ADDRESS_POINTER:
                 addressPtr = (prevData1 << 8 | (prevData2 & 0xFF)) & 0xFFFF;
@@ -186,13 +218,16 @@ function RA6963() {
                     cursorHeight = (value & 0x07) + 1;
                 } else if ((value >> 4) == 0x08) {  // mode set command
                     console.log(TAG + `: mode set command isn't implemented yet`);
+                } else if ((value >> 4) == 0x0F) {  // set bit command
+                    v = ((0x01 << (value & 0x07)) & 0xFF) >>> 0;
+                    vram[addressPtr] |= v;
                 } else {
                     console.log(TAG + `: unknown cmd 0x${toHexStr(value, 2)}`);
                 }
         }
     }
     this.readData = function() {
-        return 0xFF;
+        return dataReadByte;
     }
     this.readCmd = function() {
         return 0xFF;
@@ -209,8 +244,16 @@ function RA6963() {
         }
         if (graphicMode) {
             for (let canvasY = 0; canvasY < canvas.height; canvasY++) {
-                for (let canvasX = 0; canvasX < canvas.width; canvasX++) {
-                    canvasSetPixelState(canvasX, canvasY, true);
+                for (let canvasX = 0; canvasX < (canvas.width / 8); canvasX++) {
+                    const dataByte = vram[graphicHomeAddressPtr + (canvasY * DISPLAY_WIDTH / 8) + canvasX];
+                    for(let bit = 7; bit >= 0; bit--) {
+                        if ((dataByte >> bit) & 0x01) {
+                            canvasSetPixelState((canvasX * 8) + (8 - bit), canvasY);
+                        } else {
+                            canvasSetPixelState(canvasX + (8 - bit), canvasY, false);
+                        }
+
+                    }
                 }
             }
         }
