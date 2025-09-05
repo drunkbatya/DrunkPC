@@ -8,6 +8,7 @@
 .include "applications/cf_info/cf_info.inc"
 .include "applications/cf_test/cf_test.inc"
 .include "applications/updater/updater.inc"
+.include "applications/snake/snake.inc"
 
 .section .text
 
@@ -129,4 +130,8 @@ internal_commands:  ; TODO: separate this to compile-time templated file
     .word updater_name
     .word updater_main
     ; updater
+    ; snake
+    .word snake_name
+    .word snake_main
+    ; snake
 internal_commands_end:  ; just to know the size..
