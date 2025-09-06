@@ -26,21 +26,21 @@ jobs:
           docker run \
               -v $(pwd):/src \
               ghcr.io/drunkbatya/binutils-z80-elf:2.45 \
-                  bash -c 'cd /src/software && make`
+                  bash -c 'cd /src/software && make'
 
       - name: 'Build updater image'
         run: |
           docker run \
               -v $(pwd):/src \
               ghcr.io/drunkbatya/binutils-z80-elf:2.45 \
-                  bash -c 'cd /src/software && make updater_image`
+                  bash -c 'cd /src/software && make updater_image'
 
       - name: 'Build emulator dist'
         run: |
           docker run \
               -v $(pwd):/src \
               ghcr.io/drunkbatya/binutils-z80-elf:2.45 \
-                  bash -c 'cd /src/software && make emulator_dist`
+                  bash -c 'cd /src/software && make emulator_dist'
 
       - name: 'Prepare artifacts dir'
         run: |
