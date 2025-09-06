@@ -15,7 +15,7 @@ jobs:
       - name: 'Checkout code'
         uses: actions/checkout@v5
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
 
       - name: 'Set up Docker Buildx'
