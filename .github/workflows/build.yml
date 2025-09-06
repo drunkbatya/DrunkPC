@@ -49,7 +49,7 @@ jobs:
 
       - name: 'Package the emulator dist'
         run: |
-          cp emulator artifacts/emulator  # this need to follow emulator symlinks for software dir
+          cp -r emulator artifacts/emulator  # this need to follow emulator symlinks for software dir
 
       - name: 'Upload emulator dist to GitHub pages'
         id: deployment
