@@ -21,32 +21,25 @@ jobs:
       - name: 'Set up Docker Buildx'
         uses: docker/setup-buildx-action@v3
 
-      - name: 'Fix git under Docker'
-        run: |
-          docker run \
-              -v $(pwd):/src \
-              ghcr.io/drunkbatya/binutils-z80-elf:2.45 \
-                  bash -c 'cd /src && git config --global --add safe.directory /src'
-
       - name: 'Build firmware'
         run: |
           docker run \
               -v $(pwd):/src \
-              ghcr.io/drunkbatya/binutils-z80-elf:2.45 \
+              ghcr.io/drunkbatya/binutils-z80-elf:2.45-1 \
                   bash -c 'cd /src/software && make'
 
       - name: 'Build updater image'
         run: |
           docker run \
               -v $(pwd):/src \
-              ghcr.io/drunkbatya/binutils-z80-elf:2.45 \
+              ghcr.io/drunkbatya/binutils-z80-elf:2.45-1 \
                   bash -c 'cd /src/software && make updater_image'
 
       - name: 'Build emulator dist'
         run: |
           docker run \
               -v $(pwd):/src \
-              ghcr.io/drunkbatya/binutils-z80-elf:2.45 \
+              ghcr.io/drunkbatya/binutils-z80-elf:2.45-1 \
                   bash -c 'cd /src/software && make emulator_dist'
 
       - name: 'Prepare artifacts dir'
