@@ -26,5 +26,45 @@ jobs:
           docker run \
               -v $(pwd):/src \
               ghcr.io/drunkbatya/binutils-z80-elf:2.45 \
-              bash -c 'cd /src/software && make && make updater_image && make emulator_dist'
+                  bash -c 'cd /src/software && make`
+
+      - name: 'Build updater image'
+        run: |
+          docker run \
+              -v $(pwd):/src \
+              ghcr.io/drunkbatya/binutils-z80-elf:2.45 \
+                  bash -c 'cd /src/software && make updater_image`
+
+      - name: 'Build emulator dist'
+        run: |
+          docker run \
+              -v $(pwd):/src \
+              ghcr.io/drunkbatya/binutils-z80-elf:2.45 \
+                  bash -c 'cd /src/software && make emulator_dist`
+
+      - name: 'Prepare artifacts dir'
+        run: |
+          rm -rf artifacts
+          mkdir -p artifacts
+
+      - name: 'Package the emulator dist'
+        run: |
+          cp emulator artifacts/emulator  # this need to follow emulator symlinks for software dir
+
+      - name: 'Upload emulator dist to GitHub pages'
+        id: deployment
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: artifacts/emulator
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: 'Deploy emulator to GitHub Pages'
+        id: deployment
+        uses: actions/deploy-pages@v4
 
