@@ -32,7 +32,7 @@ ra6963_init:
 
     ; set graphic area
     call ra6963_await_cmd_or_data
-    ld a, RA6963_DISPLAY_WIDTH_BYTES  ; TODO: check
+    ld a, 30  ; TODO: check
     out (IO_LCD_DATA_ADDR), a
     call ra6963_await_cmd_or_data
     ld a, 0x00

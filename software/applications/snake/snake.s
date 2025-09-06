@@ -4,6 +4,9 @@
 .include "version/version.inc"
 .include "terminal/terminal.inc"
 
+.include "drivers/ra6963/ra6963.inc"
+.include "hardware/io.inc"
+
 .section .text
 
 ; snake direction
@@ -59,6 +62,17 @@ draw_snake:
     pop hl
     ret
 
+clear_display:
+    push hl  ; storing hl
+    ld hl, 0  ; arg3 for ra6963_memset - value
+    push hl
+    ld hl, 1920  ; arg2 for ra6963_memset - size
+    push hl
+    ld hl, 0  ; arg1 for ra6963_memset - address
+    push hl
+    call ra6963_memset
+    pop hl  ; restoring hl
+
 init_snake:
     push hl
     push de
@@ -74,13 +88,46 @@ init_snake:
     pop hl
     ret
 
+write_byte:
+    call ra6963_await_cmd_or_data
+    out (IO_LCD_DATA_ADDR), a  ; writing a char
+    ld a, RA6963_DATA_WRITE_AND_INC_ADDR  ; display address pointer will be incremented
+    call ra6963_await_cmd_or_data
+    out (IO_LCD_CMD_ADDR), a
+    ret
+
 snake_main:
     call ra6963_graphic_on
-    call ra6963_clear
+    call clear_display
 
-    call init_snake
+    ld hl, 0x0000
+    push hl
+    call ra6963_set_address_pointer
 
-    call draw_snake
+    ld a, 0x3F
+    call write_byte
+    ld a, 0
+    call write_byte
+    ld a, 0xF0
+    call write_byte
+    ld a, 0x0F
+    call write_byte
+
+    ;ld hl, 0x00EF
+    ;push hl
+    ;call ra6963_set_pixel
+
+    ;ld hl, 0x3FEF
+    ;push hl
+    ;call ra6963_set_pixel
+
+    ;ld hl, 0x3F00
+    ;push hl
+    ;call ra6963_set_pixel
+
+    ;call init_snake
+
+    ;call draw_snake
 
     call snake_await_tick_process_keyboard
 
