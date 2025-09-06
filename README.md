@@ -6,6 +6,11 @@
 
 # DrunkPC
 
+## Emulator
+You can try it out on web emulator: [https://drunkbatya.github.io/DrunkPC](https://drunkbatya.github.io/DrunkPC/)
+Emulator idea is inspired by [@alemorf](https://github.com/alemorf)
+
+
 ## About
 
 This is a simple Zilog Z80-based portable computer consists of only 7 chips. It was a my childhood's dream - to make my own computer, to get the answer for question "how does it works?".
