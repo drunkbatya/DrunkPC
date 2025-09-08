@@ -244,13 +244,12 @@ function RA6963() {
         }
         if (graphicMode) {
             for (let canvasY = 0; canvasY < canvas.height; canvasY++) {
-                for (let canvasX = 0; canvasX < (canvas.width / 8); canvasX++) {
-                    const dataByte = vram[graphicHomeAddressPtr + (canvasY * DISPLAY_WIDTH / 8) + canvasX];
-                    for(let bit = 7; bit >= 0; bit--) {
+                for (let canvasX = 0; canvasX < (canvas.width / 6); canvasX++) {
+                    const dataByte = vram[graphicHomeAddressPtr + (canvasY * DISPLAY_WIDTH / 6) + canvasX];
+                    for(let bit = 5; bit >= 0; bit--) {
                         if ((dataByte >> bit) & 0x01) {
-                            canvasSetPixelState((canvasX * 8) + (8 - bit), canvasY);
+                            canvasSetPixelState((canvasX * 6) + (6 - bit), canvasY);
                         } else {
-                            canvasSetPixelState(canvasX + (8 - bit), canvasY, false);
                         }
 
                     }

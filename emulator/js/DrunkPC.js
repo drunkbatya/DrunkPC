@@ -18,7 +18,7 @@ const IO_KBD_ADDR = 0b00100000 // A5 = 1 - device 1
 const COMPACT_FLASH_BASE = 0b01000000  // A6 = 1 - device 2
 
 let ram = new Uint8Array(0xFFFF + 1);
-let romLocked = false;
+let romLocked = true;
 let video = new RA6963();
 let keyboard = new Keyboard();
 let cf = new CompactFlash();

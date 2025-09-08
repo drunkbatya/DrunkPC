@@ -76,6 +76,7 @@ RA6963_OFFSET_REGISTER_VALUE = RA6963_CUSTOM_FONT_START_ADDR / 2048
 .global ra6963_custom_font_init
 .global ra6963_memcpy
 .global ra6963_text_mode_cursor_off
+.global ra6963_draw_box
 .global ra6963_text_mode_cursor_on
 
 .global ra6963_graphic_on
