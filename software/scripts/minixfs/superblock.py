@@ -17,6 +17,8 @@ SB_STRUCT = struct.Struct(
     "H"  # s_state
 )
 
+TOTAL_SIZE: int = 1024
+
 
 @dataclass
 class SuperBlock:
@@ -30,8 +32,7 @@ class SuperBlock:
     s_magic: int
     s_state: int
 
-    def pack(self) -> bytes:
-        total_size = 1024
+    def pack(self) -> list[int]:
         raw = SB_STRUCT.pack(
             self.s_ninodes,
             self.s_nzones,
@@ -43,10 +44,12 @@ class SuperBlock:
             self.s_magic,
             self.s_state,
         )
-        return raw + b"\x00" * (total_size - len(raw))
+        return list(raw) + [0x00] * (TOTAL_SIZE - len(raw))
 
     @classmethod
     def load(cls, data: list[int]) -> "SuperBlock":
         buf = bytes(data)
+        assert len(buf) == TOTAL_SIZE
+
         fields = SB_STRUCT.unpack_from(buf, 0)
         return cls(*fields)
