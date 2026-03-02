@@ -107,6 +107,7 @@ class MinixFS:
         # calc block no and LBA addr where inode located
         inode_size_lba = 1
         inode_offset = self.inodes_offset + (pos * self.inode_size)
+        print(inode_offset)
         inode_offset_lba = inode_offset // self.phys_block_size
         inode_offset_rem = inode_offset % self.phys_block_size
 
@@ -126,7 +127,9 @@ class MinixFS:
         dirent_offset = data_block * self.block_size
         dirent_offset_lba = dirent_offset // self.phys_block_size
         # TODO: fix
-        dirent_offset_rem = (dirent_offset % self.phys_block_size) + (dir_num * dirent.TOTAL_SIZE)
+        dirent_offset_rem = (dirent_offset % self.phys_block_size) + (
+            dir_num * dirent.TOTAL_SIZE
+        )
 
         # read full disk block
         data = self.dev.read(dirent_offset_lba, dirent_size_lba)
@@ -168,7 +171,8 @@ class MinixFS:
             i_nlinks=2,  # for "." and ".."
             i_zone=[data_block] + [0 for i in range(0, 8)],
         )
-        self.store_inode(i, free_inode_num)
+        # need to care about reserved 0 inode, but offet statrs with 0 when disk projection
+        self.store_inode(i, free_inode_num - 1)
 
         d_num = 0
         d = dirent.Dirent.from_str_name(free_inode_num, ".")
