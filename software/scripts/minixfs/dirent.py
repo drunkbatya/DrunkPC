@@ -10,7 +10,7 @@ D_STRUCT = struct.Struct(
 )
 
 NAME_SIZE = 30
-TOTAL_SIZE = 32
+TOTAL_SIZE = NAME_SIZE + 2
 
 
 @dataclass
@@ -18,7 +18,14 @@ class Dirent:
     inode: int
     name: list[int]
 
-    def pack(self) -> bytes:
+    @classmethod
+    def from_str_name(cls, inode: int, name: str) -> "Dirent":
+        name_bytes = name.encode("ascii")
+        name_bytes = name_bytes[:NAME_SIZE]
+        name_bytes = name_bytes.ljust(NAME_SIZE, b"\x00")
+        return cls(inode=inode, name=list(name_bytes))
+
+    def pack(self) -> list[int]:
         assert isinstance(self.name, list)
         assert len(self.name) <= NAME_SIZE
 
@@ -29,7 +36,7 @@ class Dirent:
 
         assert len(raw) == TOTAL_SIZE
 
-        return raw
+        return list(raw)
 
     @classmethod
     def load(cls, data: list[int]) -> "Dirent":

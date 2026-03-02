@@ -6,7 +6,7 @@ from .block_device import BlockDevice
 # Zonesize=1024
 # Maxsize=268966912
 
-from . import superblock, bitmap, inode
+from . import superblock, bitmap, inode, dirent
 
 from pathlib import Path
 
@@ -67,7 +67,7 @@ class MinixFS:
 
     def create_inode_bitmap(self):
         bm = bitmap.BitMap.create(
-            self.sb.s_ninodes, self.sb.s_imap_blocks * self.block_size
+            self.sb.s_ninodes + 1, self.sb.s_imap_blocks * self.block_size
         )
         self.store_inode_bitmap(bm)
 
@@ -90,7 +90,7 @@ class MinixFS:
 
     def create_znode_bitmap(self):
         bm = bitmap.BitMap.create(
-            self.sb.s_nzones, self.sb.s_zmap_blocks * self.block_size
+            self.sb.s_nzones - 14, self.sb.s_zmap_blocks * self.block_size
         )
         self.store_znode_bitmap(bm)
 
@@ -120,28 +120,63 @@ class MinixFS:
         # storing byte back
         self.dev.write(inode_offset_lba, data, inode_size_lba)
 
-    def create_inode(self):
+    def store_dirent(self, d: dirent.Dirent, dir_num: int, data_block: int):
+        # calc block no and LBA addr where dirent located
+        dirent_size_lba = 1
+        dirent_offset = data_block * self.block_size
+        dirent_offset_lba = dirent_offset // self.phys_block_size
+        # TODO: fix
+        dirent_offset_rem = (dirent_offset % self.phys_block_size) + (dir_num * dirent.TOTAL_SIZE)
+
+        # read full disk block
+        data = self.dev.read(dirent_offset_lba, dirent_size_lba)
+
+        # read, modify, write
+        d_raw = d.pack()
+        data[dirent_offset_rem : dirent_offset_rem + len(d_raw)] = d_raw
+
+        # storing byte back
+        self.dev.write(dirent_offset_lba, data, dirent_size_lba)
+
+    def create_root_directories(self):
+        # Reserving inode 0 like original mkfs
+        free_inode_num = self.inode_bitmap.get_free_bit()
+        self.inode_bitmap.aquire_bit(free_inode_num)
+
+        # this will be a inode 1 - root dir
         free_inode_num = self.inode_bitmap.get_free_bit()
         self.inode_bitmap.aquire_bit(free_inode_num)
         self.store_inode_bitmap(self.inode_bitmap)
 
+        # Reserving inode 0 like original mkfs
+        free_znode_num = self.znode_bitmap.get_free_bit()
+        self.znode_bitmap.aquire_bit(free_znode_num)
+
+        # this will be a inode 1 - root dir
         free_znode_num = self.znode_bitmap.get_free_bit()
         self.znode_bitmap.aquire_bit(free_znode_num)
         self.store_znode_bitmap(self.znode_bitmap)
 
+        data_block = self.sb.s_firstdatazone
+
         i = inode.Inode(
             i_mode=int(inode.FileType.S_IFDIR) | 0o755,
             i_uid=0,
-            i_size=64,
+            i_size=self.inode_size * 2,  # for "." and ".."
             i_time=0x699F6471,
             i_gid=0,
-            i_nlinks=2,
-            i_zone=[free_znode_num] + [0 for i in range(0, 8)],
+            i_nlinks=2,  # for "." and ".."
+            i_zone=[data_block] + [0 for i in range(0, 8)],
         )
         self.store_inode(i, free_inode_num)
 
-    def create_directory(self, path: Path):
-        self.create_inode()
+        d_num = 0
+        d = dirent.Dirent.from_str_name(free_inode_num, ".")
+        self.store_dirent(d, d_num, data_block)
+
+        d_num = 1
+        d = dirent.Dirent.from_str_name(free_inode_num, "..")
+        self.store_dirent(d, d_num, data_block)
 
     def create(self):
         self.create_superblock()
@@ -150,7 +185,7 @@ class MinixFS:
         self.parse_inode_bitmap()
         self.create_znode_bitmap()
         self.parse_znode_bitmap()
-        self.create_directory(Path("."))
+        self.create_root_directories()
         # self.create_directory(Path(".."))
         # self.create_inode()
 
