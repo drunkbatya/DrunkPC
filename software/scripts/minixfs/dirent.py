@@ -25,6 +25,14 @@ class Dirent:
         name_bytes = name_bytes.ljust(NAME_SIZE, b"\x00")
         return cls(inode=inode, name=list(name_bytes))
 
+    def get_str_name(self) -> str:
+        b = bytes(self.name)
+        b = b.split(b"\x00", 1)[0]
+        return b.decode("ascii", errors="replace")
+
+    def __repr__(self) -> str:
+        return f"Dirent(inode={self.inode}, name={self.get_str_name()!r})"
+
     def pack(self) -> list[int]:
         assert isinstance(self.name, list)
         assert len(self.name) <= NAME_SIZE
@@ -44,4 +52,7 @@ class Dirent:
         assert len(buf) == TOTAL_SIZE
 
         fields = D_STRUCT.unpack_from(buf, 0)
-        return cls(*fields)
+        return cls(
+            inode=fields[0],
+            name=list(fields[1:]),
+        )

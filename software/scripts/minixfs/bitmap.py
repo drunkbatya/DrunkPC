@@ -8,9 +8,11 @@ class BitMap:
     @classmethod
     def create(cls, bits_count: int, need_size: int) -> "BitMap":
         bits_in_byte = 8
-
         need_bytes = bits_count // bits_in_byte
-        data = [0x00] * need_bytes
+
+        # Bit 0 for both bitmaps are reserved by original mkfs
+        data = [0x01]
+        data += [0x00] * (need_bytes - 1)
 
         need_bytes_rem = bits_count % bits_in_byte
         if need_bytes_rem:

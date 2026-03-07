@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 class CompactFlashEmulator(BlockDevice):
-    def __init__(self, disk_path: Path, block_size: int = 512):
+    def __init__(self, disk_path: Path, block_size: int = 1024):
         super().__init__()
         self.disk_path = disk_path
         self.tag = f"{self.__class__.__name__} "
@@ -73,7 +73,7 @@ class CFImageCreator:
 
 
 if __name__ == "__main__":
-    disk_path = Path("test.img")
+    disk_path = Path("disk_minixfs_test.img")
     disk_size = 1 * 1024 * 1024
-    c = CFImageCreator(disk_path, disk_size, recreate=True)
+    c = CFImageCreator(disk_path, disk_size, recreate=False)
     # c.create()

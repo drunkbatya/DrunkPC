@@ -63,4 +63,12 @@ class Inode:
         assert len(buf) == TOTAL_SIZE
 
         fields = I_STRUCT.unpack_from(buf, 0)
-        return cls(*fields)
+        return cls(
+            i_mode=fields[0],
+            i_uid=fields[1],
+            i_size=fields[2],
+            i_time=fields[3],
+            i_gid=fields[4],
+            i_nlinks=fields[5],
+            i_zone=list(fields[6:]),
+        )
