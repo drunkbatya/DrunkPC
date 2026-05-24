@@ -58,8 +58,8 @@ jobs:
           prerelease: true
           working_directory: software/release
           files: |
-            software/release/firmware-${{ github.ref_name }}.bin
-            software/release/firmware_updater_cf_image-${{ github.ref_name }}.bin
+            firmware-${{ github.ref_name }}.bin
+            firmware_updater_cf_image-${{ github.ref_name }}.bin
 
       - name: 'Prepare artifacts dir'
         if: github.ref_type == 'tag'
@@ -75,7 +75,7 @@ jobs:
       - name: 'Upload emulator dist to GitHub pages'
         if: github.ref_type == 'tag'
         id: deployment
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: artifacts/emulator
 
@@ -93,5 +93,5 @@ jobs:
     steps:
       - name: 'Deploy emulator to GitHub Pages'
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
