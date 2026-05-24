@@ -212,6 +212,13 @@ compactflash_read_data_end:
 ; About:
 ;   Writes one sector to Compact Flash card from compactflash_sector_buf
 ;   Address must be set by call compactflash_set_lba_addr
+;   Follows the CF/IDE PIO write-sector protocol:
+;     1. await_cmd     wait BSY=0, DRDY=1 (drive ready to accept command)
+;     2. SECC=1, CMD=WRITE_SECT
+;     3. await_data    wait BSY=0, DRQ=1 (drive ready to receive data)
+;     4. pump 512 bytes into the data register
+;     5. await_cmd     wait BSY=0 again (write actually committed)
+;     6. check_error   verify ERR bit is clear
 ;   Returns true in case of success
 ; Args:
 ;   None
@@ -219,75 +226,77 @@ compactflash_read_data_end:
 ;   bool success - if success, false overwise
 ; C Prototype:
 ;   bool compactflash_write_data(void);
-;compactflash_write_data:
-;    exx  ; exchanging register pairs with their shadow
-;    pop hl  ; return address
-;    push hl  ; one more reg for return value
-;    push hl  ; pushing return pointer back
-;    exx  ; restoring register pairs
-;
-;    push af  ; storing af
-;    push ix  ; storing ix
-;    push hl  ; stroing hl
-;    push de  ; stroing de
-;    push bc  ; stroing bc
-;
-;    ld ix, 12  ; there is no way to set load sp value to ix, skipping pushed 3 reg pairs and the return address
-;    add ix, sp  ; loading sp value to ix
-;
-;    ; check busy?
-;
-;    ld a, 1  ; attempting to write one sector
-;    out (COMPACT_FLASH_SECC), a  ; writing to the sector count register
-;
-;    call compactflash_await_cmd  ; awaiting ready for recive a cmd
-;    pop hl  ; compactflash_await_cmd success
-;    ld a, l  ; loading return value to a
-;    or a  ; check success
-;    ;jr z, compactflash_write_data_false  ; returning false if false
-;
-;    ld a, CMD_WRITE_SECTOR  ; loading write sector command
-;    out (COMPACT_FLASH_CMD), a  ; writing write sector command
-;
-;    call compactflash_await_data  ; checking error
-;    pop hl  ; compactflash_check_error success
-;    ld a, l  ; loading return value to a
-;    or a  ; check success
-;    ;jr z, compactflash_write_data_false  ; returning false if false
-;
-;    ld hl, compactflash_sector_buf  ; loading buffer ptr
-;    ld b, 0  ; reading 512 bytes by 256 x 2 operations
-;    ; TODO use DRQ to indicate EOS?
-;compactflash_write_data_loop:
-;    ;call compactflash_await_data
-;    ;pop de  ; compactflash_await_data success
-;    ;ld a, e  ; loading return value to a
-;    ;or a  ; check success
-;    ;jr z, compactflash_write_data_false  ; returning false if false
-;    ld a, (hl)  ; reading byte from the buffer
-;    out (COMPACT_FLASH_DATA), a  ; writing data register value (first)
-;    inc hl  ; inc ptr
-;    ;call compactflash_await_data
-;    ;pop de  ; compactflash_await_data success
-;    ;ld a, e  ; loading return value to a
-;    ;or a  ; check success
-;    ;jr z, compactflash_write_data_false  ; returning false if false
-;    ld a, (hl)  ; reading byte from the buffer
-;    out (COMPACT_FLASH_DATA), a  ; writing data register value (second)
-;    inc hl  ; inc ptr
-;    djnz compactflash_write_data_loop  ; looping
-;compactflash_write_data_loop_end:
-;    ld (ix + 0), 1  ; returning success true
-;    jr compactflash_write_data_end
-;compactflash_write_data_false:
-;    ld (ix + 0), 0  ; returning success false
-;compactflash_write_data_end:
-;    pop bc  ; restoring bc
-;    pop de  ; restroing de
-;    pop hl  ; restoring hl
-;    pop ix  ; restoring ix
-;    pop af  ; restoring af
-;    ret
+compactflash_write_data:
+    exx  ; exchanging register pairs with their shadow
+    pop hl  ; return address
+    push hl  ; one more reg for return value
+    push hl  ; pushing return pointer back
+    exx  ; restoring register pairs
+
+    push af  ; storing af
+    push ix  ; storing ix
+    push hl  ; stroing hl
+    push de  ; stroing de
+    push bc  ; stroing bc
+
+    ld ix, 12  ; there is no way to set load sp value to ix, skipping pushed 5 reg pairs and the return address
+    add ix, sp  ; loading sp value to ix
+
+    ld a, 1  ; attempting to write one sector
+    out (COMPACT_FLASH_SECC), a  ; writing to the sector count register
+
+    call compactflash_await_cmd  ; step 1: wait for drive ready
+    pop hl  ; compactflash_await_cmd success
+    ld a, l  ; loading return value to a
+    or a  ; check success
+    jr z, compactflash_write_data_false  ; returning false if timed out
+
+    ld a, CMD_WRITE_SECTOR  ; loading write sector command
+    out (COMPACT_FLASH_CMD), a  ; step 2: issue write command
+
+    call compactflash_await_data  ; step 3: wait DRQ=1 (drive ready for data)
+    pop hl  ; compactflash_await_data success
+    ld a, l  ; loading return value to a
+    or a  ; check success
+    jr z, compactflash_write_data_false  ; returning false if timed out
+
+    ld hl, compactflash_sector_buf  ; loading buffer ptr
+    ld b, 0  ; writing 512 bytes by 256 x 2 operations
+    ; DRQ stays asserted for the whole sector once we entered the data phase,
+    ; so we don't need to poll between bytes - same convention as read_data.
+compactflash_write_data_loop:
+    ld a, (hl)  ; reading byte from the buffer
+    out (COMPACT_FLASH_DATA), a  ; writing data register value (first)
+    inc hl  ; inc ptr
+    ld a, (hl)  ; reading byte from the buffer
+    out (COMPACT_FLASH_DATA), a  ; writing data register value (second)
+    inc hl  ; inc ptr
+    djnz compactflash_write_data_loop  ; looping
+compactflash_write_data_loop_end:
+
+    call compactflash_await_cmd  ; step 5: wait BSY=0 (write actually flushed)
+    pop hl  ; compactflash_await_cmd success
+    ld a, l  ; loading return value to a
+    or a  ; check success
+    jr z, compactflash_write_data_false  ; returning false if timed out
+
+    call compactflash_check_error  ; step 6: verify ERR bit clear
+    pop hl  ; compactflash_check_error success
+    ld a, l  ; loading return value to a
+    or a  ; check success
+    jr z, compactflash_write_data_false  ; returning false if write reported error
+
+    ld (ix + 0), 1  ; returning success true
+    jr compactflash_write_data_end
+compactflash_write_data_false:
+    ld (ix + 0), 0  ; returning success false
+compactflash_write_data_end:
+    pop bc  ; restoring bc
+    pop de  ; restroing de
+    pop hl  ; restoring hl
+    pop ix  ; restoring ix
+    pop af  ; restoring af
+    ret
 
 ; About:
 ;   Reads a bytes from Compact Flash sequentially

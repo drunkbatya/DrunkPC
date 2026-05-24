@@ -24,6 +24,7 @@ This is a simple Zilog Z80-based portable computer consists of only 7 chips. It 
 - Text viewer (with scroll down and up!!)
 - JS emulator for testing in browser
 - Now commands:
+  - `msbasic` - port of [Microsoft Basic 4.7](https://github.com/feilipu/NASCOM_BASIC_4.7)
   - `update` - do a whole firmware update from CF card
   - `uname` - basic Unix `uname` with the full subset of args
   - `less` - simple basic Unix `less`, but now with only one test builtin file
@@ -33,9 +34,9 @@ This is a simple Zilog Z80-based portable computer consists of only 7 chips. It 
 ## Specs
 - 240x64 Winstar RA6963-based sunlight-readable graphic display
 - Zilog Z80 CPU
-- 48k RAM ()
+- 48k RAM (AS6C1008)
 - 16k ROM (AT28C256 flash chip)
-- On-board .. key keyboard
+- On-board 59-key keyboard
 - 5 AH Li-Po battery with on-board charger and DC-DC step-up
 - No interrupts, memmory banking, context switching, built-in GPIO, timers etc.
 
@@ -69,3 +70,18 @@ To compile both OS and updater images for emulator use:
 ```bash
     make emulator_dist
 ```
+
+## Updating
+First, compile updater image
+```bash
+git checkout 1.0.2
+cd software
+make updater_image
+```
+
+Then flash it to CF card
+```bash
+dd if=build/firmware_updater_cf_image.img of=CF_CARD_BLOCK_DEVICE_NOT_A_PARTITION
+```
+
+Insert a CF card, power on the DrunkPC, ensure CF card is working typing `cf_info`, then type `update` and follow the update process

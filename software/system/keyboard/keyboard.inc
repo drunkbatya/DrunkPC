@@ -2,6 +2,7 @@
 .global keyboard_scan
 .global keyboard_get_char
 .global keyboard_get_key
+.global keyboard_get_key_block
 
 ; variables
 .global keyboard_matrix_map

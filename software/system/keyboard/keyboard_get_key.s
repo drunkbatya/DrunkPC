@@ -25,6 +25,45 @@ keyboard_read_column:
     in a, (IO_KBD_ADDR)  ; reading column
     ret
 
+
+; About:
+;   Scans keyboard and returns the pressed key (block until keypress)
+; Args:
+;   None
+; Return:
+;   unsigned char c - pressed char code
+; C Prototype:
+; unsigned char keyboard_get_key_block(void);
+keyboard_get_key_block:
+    exx  ; exchanging register pairs with their shadow
+    pop hl  ; return address
+    push bc  ; add one more arg cause functions recives none and returns 1 arg
+    push hl  ; pushing return pointer back
+    exx  ; restroing register pairs
+
+    push af  ; storing af
+    push ix  ; storing ix
+    push hl  ; storing hl
+
+    ld ix, 8  ; there is no way to set load sp value to ix, skipping pushed 3 reg pairs and the return address
+    add ix, sp  ; loading sp value to ix
+
+    keyboard_get_key_block_loop:
+        call keyboard_get_key  ; non-block read
+        pop hl  ; return
+        ld a, l  ; loading return char
+        or a  ; if it zero?
+        jr z, keyboard_get_key_block_loop  ; looping until non zero
+
+    ld (ix + 0), a  ; returning found byte
+
+    pop hl  ; restoring hl
+    pop ix  ; restoring ix
+    pop af  ; restoring af
+
+    ret
+
+
 ; About:
 ;   Scans keyboard and returns the pressed key
 ; Args:
