@@ -11,6 +11,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     steps:
       - name: 'Checkout code'
         uses: actions/checkout@v5
@@ -42,16 +44,36 @@ jobs:
               ghcr.io/drunkbatya/binutils-z80-elf:2.45-1 \
                   bash -c 'cd /src/software && make emulator_dist'
 
+      - name: 'Prepare release files'
+        if: github.ref_type == 'tag'
+        run: |
+          mkdir software/release
+          cp software/build/firmware.bin software/release/firmware-${{ github.ref_name }}.bin
+          cp software/build/firmware_updater_cf_image.img software/release/firmware_updater_cf_image-${{ github.ref_name }}.bin
+
+      - name: 'Make release'
+        uses: softprops/action-gh-release@v3
+        if: github.ref_type == 'tag'
+        with:
+          prerelease: true
+          working_directory: software/release
+          files: |
+            software/release/firmware-${{ github.ref_name }}.bin
+            software/release/firmware_updater_cf_image-${{ github.ref_name }}.bin
+
       - name: 'Prepare artifacts dir'
+        if: github.ref_type == 'tag'
         run: |
           rm -rf artifacts
           mkdir -p artifacts
 
       - name: 'Package the emulator dist'
+        if: github.ref_type == 'tag'
         run: |
           cp -RL emulator artifacts/emulator  # this need to follow emulator symlinks for software dir
 
       - name: 'Upload emulator dist to GitHub pages'
+        if: github.ref_type == 'tag'
         id: deployment
         uses: actions/upload-pages-artifact@v3
         with:
@@ -61,7 +83,8 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    if: github.ref_type == 'tag'
     permissions:
       contents: read
       pages: write
