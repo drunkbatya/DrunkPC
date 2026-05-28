@@ -1,6 +1,6 @@
 <picture>
     <img
-        alt="An animated picture of DrunkPC"
+        alt="A picture of DrunkPC"
         src="/.github/assets/DrunkPC.png">
 </picture>
 
@@ -23,13 +23,16 @@ This is a simple Zilog Z80-based portable computer consists of only 7 chips. It 
 - Command line arguments parsing (by ' ' sep)
 - Text viewer (with scroll down and up!!)
 - JS emulator for testing in browser
-- Now commands:
-  - `msbasic` - port of [Microsoft Basic 4.7](https://github.com/feilipu/NASCOM_BASIC_4.7)
+
+## Supported commands
+### List
+  - `msbasic` - a port of [Microsoft Basic 4.7](https://github.com/feilipu/NASCOM_BASIC_4.7)
   - `update` - do a whole firmware update from CF card
   - `uname` - basic Unix `uname` with the full subset of args
   - `less` - simple basic Unix `less`, but now with only one test builtin file
   - `test_app` - for test cmd line args parsing (argc, argv)
   - `cf_info` - prints an identity CompactFlash info
+  - `snake` - a raw Sanake Game (work in progress)
 
 ## Specs
 - 240x64 Winstar RA6963-based sunlight-readable graphic display
@@ -72,7 +75,7 @@ To compile both OS and updater images for emulator use:
 ```
 
 ## Updating
-First, compile updater image
+First download updater image from [releases](https://github.com/drunkbatya/DrunkPC/releases), or compile it:
 ```bash
 git checkout 1.0.2
 cd software

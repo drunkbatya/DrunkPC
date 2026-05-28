@@ -257,7 +257,10 @@ function RA6963() {
             }
         }
         if (cursorBlink) {
-            drawCursor(cursorX, cursorY);
+            const cursorBlinkPeriodMs = 1000;
+            if ((performance.now() % cursorBlinkPeriodMs) < (cursorBlinkPeriodMs / 2)) {
+                drawCursor(cursorX, cursorY);
+            }
         }
         ctx.putImageData(canvasData, 0, 0);
     }
