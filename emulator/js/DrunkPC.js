@@ -21,7 +21,7 @@ let ram = new Uint8Array(0xFFFF + 1);
 let romLocked = true;
 let video = new RA6963();
 let screenKeyboard = new ScreenKeyboard();
-let keyboard = new Keyboard();
+let keyboard = new Keyboard(screenKeyboard);
 let cf = new CompactFlash();
 
 function readMemmory(addr) {

@@ -1,6 +1,7 @@
 function ScreenKeyboard(parentDocumentElement) {
     let html = '<link href="css/screenkeyboard.css" rel="stylesheet" type="text/css">';
     html += '<div>Real keyboard is also works</div>';
+
     html += '<div style="left:0px;top:0px" id="KeyEscape">esc</div>';
     html += '<div style="left:50px;top:0px" id="KeyDigit1">1\t!</div>';
     html += '<div style="left:100px;top:0px" id="KeyDigit2">2\t@</div>';
@@ -14,51 +15,54 @@ function ScreenKeyboard(parentDocumentElement) {
     html += '<div style="left:500px;top:0px" id="KeyDigit0">0\t)</div>';
     html += '<div style="left:550px;top:0px" id="KeyMinus">-\t_</div>';
     html += '<div style="left:600px;top:0px" id="KeyEqual">=\t+</div>';
-    html += '<div style="left:700px;top:0px" id="KeyBackspace2">delete</div>';
+    html += '<div style="left:700px;top:0px" id="KeyBackspace">delete</div>';
+
     html += '<div style="left:0px;top:50px" id="KeyBackquote">`\t~</div>';
-    html += '<div style="left:75px;top:50px" id="KeyQ">q</div>';
-    html += '<div style="left:125px;top:50px" id="KeyW">w</div>';
-    html += '<div style="left:175px;top:50px" id="key30">e</div>';
-    html += '<div style="left:225px;top:50px" id="key24">r</div>';
-    html += '<div style="left:275px;top:50px" id="key34">t</div>';
-    html += '<div style="left:325px;top:50px" id="key26">y</div>';
-    html += '<div style="left:375px;top:50px" id="key49">u</div>';
-    html += '<div style="left:425px;top:50px" id="key51">i</div>';
-    html += '<div style="left:475px;top:50px" id="key48">o</div>';
-    html += '<div style="left:525px;top:50px" id="key27">p</div>';
-    html += '<div style="left:575px;top:50px" id="key11">[\t{</div>';
-    html += '<div style="left:625px;top:50px" id="key60">]\t}</div>';
-    html += '<div style="left:675px;top:50px" id="key60">\\\t|</div>';
-    html += '<div style="left:0px;top:100px" id="key65">tab</div>';
-    html += '<div style="left:100px;top:100px" id="key46">a</div>';
-    html += '<div style="left:150px;top:100px" id="key44">s</div>';
-    html += '<div style="left:200px;top:100px" id="key19">d</div>';
-    html += '<div style="left:250px;top:100px" id="key36">f</div>';
-    html += '<div style="left:300px;top:100px" id="key38">g</div>';
-    html += '<div style="left:350px;top:100px" id="key35">h</div>';
-    html += '<div style="left:400px;top:100px" id="key32">j</div>';
-    html += '<div style="left:450px;top:100px" id="key22">k</div>';
-    html += '<div style="left:500px;top:100px" id="key43">l</div>';
-    html += '<div style="left:550px;top:100px" id="key50">;\t:</div>';
-    html += '<div style="left:600px;top:100px" id="key16">\'\t"</div>';
-    html += '<div style="left:700px;top:100px" id="key16">return</div>';
-    html += '<div style="left:0px;top:150px" id="key66">shift</div>';
-    html += '<div style="left:125px;top:150px" id="key52">z</div>';
-    html += '<div style="left:175px;top:150px" id="key21">x</div>';
-    html += '<div style="left:225px;top:150px" id="key33">c</div>';
-    html += '<div style="left:275px;top:150px" id="key28">v</div>';
-    html += '<div style="left:325px;top:150px" id="key41">b</div>';
-    html += '<div style="left:375px;top:150px" id="key45">n</div>';
-    html += '<div style="left:425px;top:150px" id="key20">m</div>';
-    html += '<div style="left:475px;top:150px" id="key18">,\t<</div>';
-    html += '<div style="left:525px;top:150px" id="key13">.\t></div>';
-    html += '<div style="left:575px;top:150px" id="key17">/\t?</div>';
-    html += '<div style="left:650px;top:150px" id="key58">^</div>';
-    html += '<div style="left:600px;top:200px" id="key57"><</div>';
+    html += '<div style="left:75px;top:50px" id="KeyKeyQ">q</div>';
+    html += '<div style="left:125px;top:50px" id="KeyKeyW">w</div>';
+    html += '<div style="left:175px;top:50px" id="KeyKeyE">e</div>';
+    html += '<div style="left:225px;top:50px" id="KeyKeyR">r</div>';
+    html += '<div style="left:275px;top:50px" id="KeyKeyT">t</div>';
+    html += '<div style="left:325px;top:50px" id="KeyKeyY">y</div>';
+    html += '<div style="left:375px;top:50px" id="KeyKeyU">u</div>';
+    html += '<div style="left:425px;top:50px" id="KeyKeyI">i</div>';
+    html += '<div style="left:475px;top:50px" id="KeyKeyO">o</div>';
+    html += '<div style="left:525px;top:50px" id="KeyKeyP">p</div>';
+    html += '<div style="left:575px;top:50px" id="KeyBracketLeft">[\t{</div>';
+    html += '<div style="left:625px;top:50px" id="KeyBracketRight">]\t}</div>';
+    html += '<div style="left:675px;top:50px" id="KeyBackslash">\\\t|</div>';
+
+    html += '<div style="left:0px;top:100px" id="KeyTab">tab</div>';
+    html += '<div style="left:100px;top:100px" id="KeyKeyA">a</div>';
+    html += '<div style="left:150px;top:100px" id="KeyKeyS">s</div>';
+    html += '<div style="left:200px;top:100px" id="KeyKeyD">d</div>';
+    html += '<div style="left:250px;top:100px" id="KeyKeyF">f</div>';
+    html += '<div style="left:300px;top:100px" id="KeyKeyG">g</div>';
+    html += '<div style="left:350px;top:100px" id="KeyKeyH">h</div>';
+    html += '<div style="left:400px;top:100px" id="KeyKeyJ">j</div>';
+    html += '<div style="left:450px;top:100px" id="KeyKeyK">k</div>';
+    html += '<div style="left:500px;top:100px" id="KeyKeyL">l</div>';
+    html += '<div style="left:550px;top:100px" id="KeySemicolon">;\t:</div>';
+    html += '<div style="left:600px;top:100px" id="KeyQuote">\'\t"</div>';
+    html += '<div style="left:700px;top:100px" id="KeyEnter">return</div>';
+
+    html += '<div style="left:0px;top:150px" id="KeyShiftLeft">shift</div>';
+    html += '<div style="left:125px;top:150px" id="KeyKeyZ">z</div>';
+    html += '<div style="left:175px;top:150px" id="KeyKeyX">x</div>';
+    html += '<div style="left:225px;top:150px" id="KeyKeyC">c</div>';
+    html += '<div style="left:275px;top:150px" id="KeyKeyV">v</div>';
+    html += '<div style="left:325px;top:150px" id="KeyKeyB">b</div>';
+    html += '<div style="left:375px;top:150px" id="KeyKeyN">n</div>';
+    html += '<div style="left:425px;top:150px" id="KeyKeyM">m</div>';
+    html += '<div style="left:475px;top:150px" id="KeyComma">,\t<</div>';
+    html += '<div style="left:525px;top:150px" id="KeyPeriod">.\t></div>';
+    html += '<div style="left:575px;top:150px" id="KeySlash">/\t?</div>';
+    html += '<div style="left:650px;top:150px" id="KeyArrowUp">^</div>';
+    html += '<div style="left:600px;top:200px" id="KeyArrowLeft"><</div>';
 
     html += `
         <div
-            id="key59"
+            id="KeyArrowDown"
             style="
                 left:650px;
                 top:200px;
@@ -68,12 +72,11 @@ function ScreenKeyboard(parentDocumentElement) {
             ">^
         </div>`;
 
-    html += '<div style="left:700px;top:200px" id="key56">></div>';
+    html += '<div style="left:700px;top:200px" id="KeyArrowRight">></div>';
 
-    html += '<div style="left:0px;top:200px" id="key59">control</div>';
-    html += '<div style="left:50px;top:200px" id="key56">option</div>';
-
-    html += '<div style="left:300px;top:200px;width:125px" id="key54">space</div>';
+    html += '<div style="left:0px;top:200px" id="KeyControlLeft">control</div>';
+    html += '<div style="left:50px;top:200px" id="KeyAltLeft">option</div>';
+    html += '<div style="left:300px;top:200px;width:125px" id="KeySpace">space</div>';
 
     let div = document.createElement('div');
     div.className = "keyboard";
@@ -89,31 +92,30 @@ function ScreenKeyboard(parentDocumentElement) {
             keyHandler(keyCode, press);
     }
 
-    for (let i = 0; i < 59; i++) {
-        let o = div.querySelector("#key" + i);
-        if (o) {
-            uiObjects[i] = o;
-            let ii = i;
-            o.addEventListener('touchstart', function(e) {
-                touchmode = true;
-                callKeyHandler(ii, true);
-            });
-            o.addEventListener('touchend', function(e) {
-                callKeyHandler(ii, false);
-            });
-            o.addEventListener('pointerdown', function(e) {
-                if (!touchmode) {
-                    this.setPointerCapture(e.pointerId);
-                    callKeyHandler(ii, true);
-                }
-            });
-            o.addEventListener('pointerup', function(e) {
-                if (!touchmode) {
-                    this.releasePointerCapture(e.pointerId);
-                    callKeyHandler(ii, false);
-                }
-            });
-        }
+    const keys = div.querySelectorAll('[id^="Key"]');
+
+    for (const o of keys) {
+        const keyCode = o.id.slice(3);
+        uiObjects[keyCode] = o;
+        o.addEventListener('touchstart', function(e) {
+            touchmode = true;
+            callKeyHandler(keyCode, true);
+        });
+        o.addEventListener('touchend', function(e) {
+            callKeyHandler(keyCode, false);
+        });
+        o.addEventListener('pointerdown', function(e) {
+            if (!touchmode) {
+                this.setPointerCapture(e.pointerId);
+                callKeyHandler(keyCode, true);
+            }
+        });
+        o.addEventListener('pointerup', function(e) {
+            if (!touchmode) {
+                this.releasePointerCapture(e.pointerId);
+                callKeyHandler(keyCode, false);
+            }
+        });
     }
 
     this.setKeyHandler = function(handler) {

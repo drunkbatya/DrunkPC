@@ -1,4 +1,4 @@
-function Keyboard() {
+function Keyboard(screenKeyboard) {
     const pressed = new Set();
     let row = 0x00;
 
@@ -100,6 +100,16 @@ function Keyboard() {
         pressed.add(e.code);
         //console.log('DOWN', e.key, e.code);
     }
+    function screenKeyboardKeyHandler(keyCode, isPressed) {
+        if (isPressed) {
+            pressed.add(keyCode);
+        } else {
+            pressed.delete(keyCode);
+        }
+    }
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
+    if (screenKeyboard) {
+        screenKeyboard.setKeyHandler(screenKeyboardKeyHandler)
+    }
 }
