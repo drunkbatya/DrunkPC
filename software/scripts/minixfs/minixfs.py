@@ -250,4 +250,3 @@ class MinixFS:
         self.parse_superblock()
         self.parse_inode_bitmap()
         self.parse_znode_bitmap()
-        self.list_directory()
