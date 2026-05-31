@@ -6,8 +6,9 @@ from .block_device import BlockDevice
 # Zonesize=1024
 # Maxsize=268966912
 
-from . import superblock, bitmap, inode, dirent, helpers
+from . import superblock, bitmap, inode, dirent, helpers, path
 
+from collections.abc import Iterator
 from pathlib import Path
 
 
@@ -51,7 +52,7 @@ class MinixFS:
 
         self.sb = superblock.SuperBlock.load(data)
 
-        self.imap_size = self.sb.s_zmap_blocks * self.block_size
+        self.imap_size = self.sb.s_imap_blocks * self.block_size
         self.zmap_offset = self.imap_offset + self.imap_size
         self.zmap_size = self.sb.s_zmap_blocks * self.block_size
         self.inodes_offset = self.zmap_offset + self.zmap_size
@@ -181,6 +182,149 @@ class MinixFS:
         d_data = data[dirent_offset_rem : dirent_offset_rem + dirent.TOTAL_SIZE]
         return dirent.Dirent.load(d_data)
 
+    # -- multi-block iteration: direct + indirect + double-indirect -------
+
+    def read_block(self, block_num: int) -> list[int]:
+        """Read one filesystem block (1024 bytes) by its zone number."""
+        return self.dev.read(block_num, 1)
+
+    def read_indirect_pointers(self, block_num: int) -> list[int]:
+        """Parse a block as an array of little-endian 16-bit zone numbers."""
+        data = self.read_block(block_num)
+        return [data[i] | (data[i + 1] << 8) for i in range(0, self.block_size, 2)]
+
+    def iter_inode_blocks(self, ino: inode.Inode) -> Iterator[int]:
+        """Yield every data block of `ino` in file order.
+        Walks i_zone[0..6] directly, i_zone[7] as single indirect, and
+        i_zone[8] as double indirect. Zero entries are skipped (holes)."""
+        for z in ino.i_zone[:7]:
+            if z != 0:
+                yield z
+        if ino.i_zone[7] != 0:
+            for z in self.read_indirect_pointers(ino.i_zone[7]):
+                if z != 0:
+                    yield z
+        if ino.i_zone[8] != 0:
+            for ind_block in self.read_indirect_pointers(ino.i_zone[8]):
+                if ind_block == 0:
+                    continue
+                for z in self.read_indirect_pointers(ind_block):
+                    if z != 0:
+                        yield z
+
+    # -- directory traversal ----------------------------------------------
+
+    def load_dirents_from_block(self, block_num: int) -> list[dirent.Dirent]:
+        """Parse one data block as a sequence of dirents."""
+        data = self.read_block(block_num)
+        per_block = self.block_size // dirent.TOTAL_SIZE
+        return [
+            dirent.Dirent.load(
+                data[i * dirent.TOTAL_SIZE : (i + 1) * dirent.TOTAL_SIZE]
+            )
+            for i in range(per_block)
+        ]
+
+    def iter_dirents(self, dir_inode: inode.Inode) -> Iterator[dirent.Dirent]:
+        """Yield every dirent of `dir_inode`, capped by its i_size so we
+        don't return stale entries past the end of the directory."""
+        total = dir_inode.i_size // dirent.TOTAL_SIZE
+        yielded = 0
+        for block_num in self.iter_inode_blocks(dir_inode):
+            if yielded >= total:
+                return
+            for d in self.load_dirents_from_block(block_num):
+                if yielded >= total:
+                    return
+                yield d
+                yielded += 1
+
+    def find_dirent(
+        self, dir_inode: inode.Inode, name: str
+    ) -> dirent.Dirent | None:
+        """Return the dirent named `name` in `dir_inode`, or None."""
+        for d in self.iter_dirents(dir_inode):
+            if d.get_str_name() == name:
+                return d
+        return None
+
+    # -- inode type predicates --------------------------------------------
+
+    def is_directory(self, ino: inode.Inode) -> bool:
+        return (ino.i_mode & 0o170000) == int(inode.FileType.S_IFDIR)
+
+    def is_regular_file(self, ino: inode.Inode) -> bool:
+        return (ino.i_mode & 0o170000) == int(inode.FileType.S_IFREG)
+
+    # -- path resolution --------------------------------------------------
+
+    def resolve_path(self, p: str) -> tuple[inode.Inode, int] | None:
+        """Walk `p` from the root and return (inode, inode_num).
+        Returns None if any path component is missing or non-directory."""
+        cur_num = 1  # root inode
+        cur_inode = self.load_inode(cur_num)
+        for name in path.split(p):
+            if not self.is_directory(cur_inode):
+                return None
+            entry = self.find_dirent(cur_inode, name)
+            if entry is None:
+                return None
+            cur_num = entry.inode
+            cur_inode = self.load_inode(cur_num)
+        return (cur_inode, cur_num)
+
+    # -- allocation -------------------------------------------------------
+
+    def allocate_inode(self) -> int:
+        """Reserve a free inode and return its 1-based number."""
+        n = self.inode_bitmap.get_free_bit()
+        if n is None:
+            raise OSError("no free inodes")
+        self.inode_bitmap.aquire_bit(n)
+        self.store_inode_bitmap(self.inode_bitmap)
+        return n
+
+    def allocate_zone(self) -> int:
+        """Reserve a free data zone, zero-fill its block, return block number.
+        Zone bitmap bit N maps to block (s_firstdatazone + N - 1)."""
+        n = self.znode_bitmap.get_free_bit()
+        if n is None:
+            raise OSError("no free zones")
+        self.znode_bitmap.aquire_bit(n)
+        self.store_znode_bitmap(self.znode_bitmap)
+        block_num = self.sb.s_firstdatazone + n - 1
+        self.dev.write(block_num, [0] * self.block_size, 1)
+        return block_num
+
+    def append_dirent(
+        self,
+        dir_inode: inode.Inode,
+        dir_inode_num: int,
+        child_inode_num: int,
+        name: str,
+    ) -> None:
+        """Add a new entry to a directory. Allocates a new zone if the next
+        slot crosses a block boundary. Updates and stores the directory's
+        i_size and inode. Only direct zones (i_zone[0..6]) supported for now."""
+        new_offset = dir_inode.i_size
+        block_idx = new_offset // self.block_size
+        slot_in_block = (new_offset % self.block_size) // dirent.TOTAL_SIZE
+
+        if block_idx >= 7:
+            raise NotImplementedError(
+                "directory has outgrown direct zones; indirect-zone allocation TODO"
+            )
+
+        if dir_inode.i_zone[block_idx] == 0:
+            dir_inode.i_zone[block_idx] = self.allocate_zone()
+
+        block_num = dir_inode.i_zone[block_idx]
+        d = dirent.Dirent.from_str_name(child_inode_num, name)
+        self.store_dirent(d, slot_in_block, block_num)
+
+        dir_inode.i_size += dirent.TOTAL_SIZE
+        self.store_inode(dir_inode, dir_inode_num)
+
     def create_root_directories(self):
         # this will be a inode 1 - root dir
         free_inode_num = self.inode_bitmap.get_free_bit()
@@ -197,7 +341,7 @@ class MinixFS:
         i = inode.Inode(
             i_mode=int(inode.FileType.S_IFDIR) | 0o755,
             i_uid=0,
-            i_size=self.inode_size * 2,  # for "." and ".."
+            i_size=dirent.TOTAL_SIZE * 2,  # for "." and ".."
             i_time=0x699F6471,
             i_gid=0,
             i_nlinks=2,  # for "." and ".."
@@ -222,29 +366,135 @@ class MinixFS:
         self.parse_znode_bitmap()
         self.create_root_directories()
 
-    def list_directory(self):
-        root_inode = self.load_inode(1)
-        root_inode_entries = root_inode.i_size // dirent.TOTAL_SIZE
-        data_block = root_inode.i_zone[0]
-        print(root_inode)
-        print("Path: /")
-        print(f"Total: {root_inode_entries} entries")
-        for i in range(0, root_inode_entries):
-            i_dirent = self.load_dirent(i, data_block)
-            cur_inode = self.load_inode(i_dirent.inode)
-            mode_str = helpers.mode_to_str(cur_inode.i_mode)
-            links = cur_inode.i_nlinks
-            user_id = cur_inode.i_uid
-            group_id = cur_inode.i_gid
-            size = cur_inode.i_size
-            name = i_dirent.get_str_name()
-            print(f"{mode_str}\t{links}{user_id}\t{group_id}\t{size}\t{name}")
-            # print(i_dirent)
-            # print(cur_inode)
+    # -- public operations ------------------------------------------------
 
-        # find root dir inode
-        # get size and data blocks
-        # go to datablock
+    def list_directory(self, p: str = "/"):
+        """Print an ls-like listing of the directory at `p`."""
+        res = self.resolve_path(p)
+        if res is None:
+            raise FileNotFoundError(f"no such path: {p}")
+        dir_inode, _ = res
+        if not self.is_directory(dir_inode):
+            raise NotADirectoryError(f"not a directory: {p}")
+
+        entries = dir_inode.i_size // dirent.TOTAL_SIZE
+        print(dir_inode)
+        print(f"Path: {p}")
+        print(f"Total: {entries} entries")
+        for d in self.iter_dirents(dir_inode):
+            child = self.load_inode(d.inode)
+            mode_str = helpers.mode_to_str(child.i_mode)
+            print(
+                f"{mode_str}\t{child.i_nlinks}{child.i_uid}\t{child.i_gid}\t"
+                f"{child.i_size}\t{d.get_str_name()}"
+            )
+
+    def touch(self, p: str) -> int:
+        """Create an empty regular file at `p`. Parent directory must exist.
+        Returns the new inode number."""
+        return self._create_entry(
+            p,
+            mode=int(inode.FileType.S_IFREG) | 0o644,
+            nlinks=1,
+            zones=[0] * 9,
+            child_size=0,
+        )
+
+    def mkdir(self, p: str, parent: bool = False) -> int:
+        """Create directory at `p`. With `parent=True` behaves like
+        `mkdir -p`: missing intermediate directories are created and an
+        already-existing target is accepted silently (as long as it is a
+        directory). Returns the inode number of the final directory."""
+        components = path.split(p)
+        if not components:
+            raise ValueError("cannot mkdir the root directory")
+
+        if not parent:
+            return self._mkdir_one(p)
+
+        last_num = 0
+        for i in range(len(components)):
+            partial = "/" + "/".join(components[: i + 1])
+            existing = self.resolve_path(partial)
+            if existing is None:
+                last_num = self._mkdir_one(partial)
+            else:
+                ino, num = existing
+                if not self.is_directory(ino):
+                    raise NotADirectoryError(
+                        f"path component is not a directory: {partial}"
+                    )
+                last_num = num
+        return last_num
+
+    # -- internal: file/directory creation --------------------------------
+
+    def _create_entry(
+        self,
+        p: str,
+        mode: int,
+        nlinks: int,
+        zones: list[int],
+        child_size: int,
+    ) -> int:
+        """Create a fresh inode for `p`, link it under its parent directory,
+        and return its inode number. Shared core for touch and mkdir."""
+        parent_path = path.parent(p)
+        name = path.basename(p)
+        if not name:
+            raise ValueError(f"invalid path: {p}")
+
+        parent_res = self.resolve_path(parent_path)
+        if parent_res is None:
+            raise FileNotFoundError(f"parent does not exist: {parent_path}")
+        parent_inode, parent_num = parent_res
+        if not self.is_directory(parent_inode):
+            raise NotADirectoryError(f"parent is not a directory: {parent_path}")
+        if self.find_dirent(parent_inode, name) is not None:
+            raise FileExistsError(f"already exists: {p}")
+
+        child_num = self.allocate_inode()
+        child_inode = inode.Inode(
+            i_mode=mode,
+            i_uid=0,
+            i_size=child_size,
+            i_time=0x699F6471,
+            i_gid=0,
+            i_nlinks=nlinks,
+            i_zone=zones,
+        )
+        self.store_inode(child_inode, child_num)
+        self.append_dirent(parent_inode, parent_num, child_num, name)
+        return child_num
+
+    def _mkdir_one(self, p: str) -> int:
+        """Create one directory; parent must already exist."""
+        parent_path = path.parent(p)
+        parent_res = self.resolve_path(parent_path)
+        if parent_res is None:
+            raise FileNotFoundError(f"parent does not exist: {parent_path}")
+        _, parent_num = parent_res
+
+        # New directory needs its own data zone for "." and ".." dirents.
+        data_zone = self.allocate_zone()
+        child_num = self._create_entry(
+            p,
+            mode=int(inode.FileType.S_IFDIR) | 0o755,
+            nlinks=2,  # "." and parent's reference
+            zones=[data_zone] + [0] * 8,
+            child_size=dirent.TOTAL_SIZE * 2,
+        )
+
+        # Populate the new directory: "." -> self, ".." -> parent.
+        self.store_dirent(dirent.Dirent.from_str_name(child_num, "."), 0, data_zone)
+        self.store_dirent(dirent.Dirent.from_str_name(parent_num, ".."), 1, data_zone)
+
+        # Parent gains a link via the new entry's "..".
+        parent_inode = self.load_inode(parent_num)
+        parent_inode.i_nlinks += 1
+        self.store_inode(parent_inode, parent_num)
+
+        return child_num
 
     def mount(self):
         self.parse_superblock()

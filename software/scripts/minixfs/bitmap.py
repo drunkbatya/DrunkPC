@@ -57,7 +57,7 @@ class BitMap:
         byte_pos = num // bits_in_byte
         bit_pos = num % bits_in_byte
 
-        self.data[byte_pos] &= ~(0x01 << bit_pos)
+        self.data[byte_pos] &= (~(0x01 << bit_pos)) & 0xFF
 
     @classmethod
     def load(cls, data: list[int]) -> "BitMap":
