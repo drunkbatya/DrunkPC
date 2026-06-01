@@ -16,8 +16,12 @@ TMPL_SOURCES := $(patsubst ./%,%,$(TMPL_SOURCES))
 ASM_SOURCES += $(shell find . \
 	-not -path '*/build/*' \
 	-not -path '*/assets/*' -not -path '*/sandbox/*' -not -path '*/.*' \
+	-not -path '*/applications/user/*' \
 	-type f -name "*.s")
-ASM_INCLUDES += $(shell find . -not -path '*/assets/*' -not -path '*/sandbox/*' -not -path '*/.*' -type f -name "*.inc")
+ASM_INCLUDES += $(shell find . \
+	-not -path '*/assets/*' -not -path '*/sandbox/*' -not -path '*/.*' \
+	-not -path '*/applications/user/*' \
+	-type f -name "*.inc")
 ASM_SOURCES  := $(patsubst ./%,%,$(ASM_SOURCES))
 
 #ASSETS_SOURCES = $(shell find ${ASSETSSRCDIR} -type f -name "*.png")
