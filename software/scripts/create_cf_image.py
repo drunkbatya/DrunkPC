@@ -89,4 +89,8 @@ if __name__ == "__main__":
     disk_path = Path(args.output_file)
     disk_size = args.size * 1024 * 1024
     c = CFImageCreator(disk_path, disk_size, recreate=args.force)
+
+    if args.source_dir is not None:
+        c.minixfs.populate_from_directory(Path(args.source_dir), "/")
+
     c.minixfs.list_directory("/")

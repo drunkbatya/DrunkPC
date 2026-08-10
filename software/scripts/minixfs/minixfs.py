@@ -6,7 +6,7 @@ from .block_device import BlockDevice
 # Zonesize=1024
 # Maxsize=268966912
 
-from . import superblock, bitmap, inode, dirent, helpers, path
+from . import superblock, bitmap, inode, dirent, helpers, path, defaults
 
 from collections.abc import Iterator
 from pathlib import Path
@@ -212,6 +212,69 @@ class MinixFS:
                     if z != 0:
                         yield z
 
+    # -- multi-block write: allocate zones on demand -----------------------
+
+    def write_indirect_pointers(
+        self, block_num: int, pointers: list[int]
+    ) -> None:
+        """Pack `pointers` (16-bit little-endian) into a block and write it."""
+        data = []
+        for p in pointers:
+            data.append(p & 0xFF)
+            data.append((p >> 8) & 0xFF)
+        self.dev.write(block_num, data, 1)
+
+    def ensure_inode_has_block(
+        self, ino: inode.Inode, ino_num: int, file_block_idx: int
+    ) -> int:
+        """Return the physical block backing `file_block_idx` in `ino`.
+        Walks direct -> indirect -> double-indirect, allocating any missing
+        index or data zones as it goes."""
+        ptrs_per_block = self.block_size // 2
+        if file_block_idx < 7:
+            return self._ensure_direct_zone(ino, ino_num, file_block_idx)
+        rel = file_block_idx - 7
+        if rel < ptrs_per_block:
+            return self._ensure_via_indirect(ino, ino_num, 7, rel)
+        rel -= ptrs_per_block
+        outer, inner = divmod(rel, ptrs_per_block)
+        return self._ensure_via_double_indirect(ino, ino_num, outer, inner)
+
+    def _ensure_direct_zone(
+        self, ino: inode.Inode, ino_num: int, zone_idx: int
+    ) -> int:
+        if ino.i_zone[zone_idx] == 0:
+            ino.i_zone[zone_idx] = self.allocate_zone()
+            self.store_inode(ino, ino_num)
+        return ino.i_zone[zone_idx]
+
+    def _ensure_via_indirect(
+        self, ino: inode.Inode, ino_num: int, zone_idx: int, slot: int
+    ) -> int:
+        if ino.i_zone[zone_idx] == 0:
+            ino.i_zone[zone_idx] = self.allocate_zone()
+            self.store_inode(ino, ino_num)
+        return self._ensure_pointer_slot(ino.i_zone[zone_idx], slot)
+
+    def _ensure_via_double_indirect(
+        self, ino: inode.Inode, ino_num: int, outer_slot: int, inner_slot: int
+    ) -> int:
+        if ino.i_zone[8] == 0:
+            ino.i_zone[8] = self.allocate_zone()
+            self.store_inode(ino, ino_num)
+        indir = self._ensure_pointer_slot(ino.i_zone[8], outer_slot)
+        return self._ensure_pointer_slot(indir, inner_slot)
+
+    def _ensure_pointer_slot(self, indir_block: int, slot: int) -> int:
+        """Make sure slot `slot` of indirect block `indir_block` holds a real
+        zone number, allocating + writing back if it doesn't. Returns the
+        zone number."""
+        pointers = self.read_indirect_pointers(indir_block)
+        if pointers[slot] == 0:
+            pointers[slot] = self.allocate_zone()
+            self.write_indirect_pointers(indir_block, pointers)
+        return pointers[slot]
+
     # -- directory traversal ----------------------------------------------
 
     def load_dirents_from_block(self, block_num: int) -> list[dirent.Dirent]:
@@ -303,27 +366,179 @@ class MinixFS:
         child_inode_num: int,
         name: str,
     ) -> None:
-        """Add a new entry to a directory. Allocates a new zone if the next
-        slot crosses a block boundary. Updates and stores the directory's
-        i_size and inode. Only direct zones (i_zone[0..6]) supported for now."""
+        """Add a new entry to the end of a directory. Allocates a new zone
+        (direct or indirect or double-indirect) when the next slot crosses
+        a block boundary. Updates and stores the directory's inode."""
         new_offset = dir_inode.i_size
         block_idx = new_offset // self.block_size
         slot_in_block = (new_offset % self.block_size) // dirent.TOTAL_SIZE
+        block_num = self.ensure_inode_has_block(dir_inode, dir_inode_num, block_idx)
 
-        if block_idx >= 7:
-            raise NotImplementedError(
-                "directory has outgrown direct zones; indirect-zone allocation TODO"
-            )
-
-        if dir_inode.i_zone[block_idx] == 0:
-            dir_inode.i_zone[block_idx] = self.allocate_zone()
-
-        block_num = dir_inode.i_zone[block_idx]
         d = dirent.Dirent.from_str_name(child_inode_num, name)
         self.store_dirent(d, slot_in_block, block_num)
 
         dir_inode.i_size += dirent.TOTAL_SIZE
         self.store_inode(dir_inode, dir_inode_num)
+
+    def free_inode(self, ino_num: int) -> None:
+        """Release the inode bit. The inode struct on disk is left as-is
+        (no consumer reads it without consulting the bitmap first)."""
+        self.inode_bitmap.release_bit(ino_num)
+        self.store_inode_bitmap(self.inode_bitmap)
+
+    def free_zone(self, block_num: int) -> None:
+        """Release a data zone bit. Inverse of allocate_zone."""
+        bit = block_num - self.sb.s_firstdatazone + 1
+        self.znode_bitmap.release_bit(bit)
+        self.store_znode_bitmap(self.znode_bitmap)
+
+    def free_inode_zones(self, ino: inode.Inode, ino_num: int) -> None:
+        """Release every data zone of `ino` (including indirect index blocks)
+        and zero out i_zone / i_size. Leaves `ino` in a fresh state, ready
+        for either deletion or rewrite."""
+        for i in range(7):
+            if ino.i_zone[i] != 0:
+                self.free_zone(ino.i_zone[i])
+                ino.i_zone[i] = 0
+        if ino.i_zone[7] != 0:
+            for z in self.read_indirect_pointers(ino.i_zone[7]):
+                if z != 0:
+                    self.free_zone(z)
+            self.free_zone(ino.i_zone[7])
+            ino.i_zone[7] = 0
+        if ino.i_zone[8] != 0:
+            for ind in self.read_indirect_pointers(ino.i_zone[8]):
+                if ind == 0:
+                    continue
+                for z in self.read_indirect_pointers(ind):
+                    if z != 0:
+                        self.free_zone(z)
+                self.free_zone(ind)
+            self.free_zone(ino.i_zone[8])
+            ino.i_zone[8] = 0
+        ino.i_size = 0
+        self.store_inode(ino, ino_num)
+
+    # -- read/write at logical "file block" granularity -------------------
+
+    def get_inode_block_at(self, ino: inode.Inode, file_block_idx: int) -> int:
+        """Return the physical block at file-relative index (read-only;
+        does NOT allocate). Raises IndexError if past end."""
+        for i, block_num in enumerate(self.iter_inode_blocks(ino)):
+            if i == file_block_idx:
+                return block_num
+        raise IndexError(f"file block {file_block_idx} out of range")
+
+    def read_dirent_by_index(
+        self, dir_inode: inode.Inode, idx: int
+    ) -> dirent.Dirent:
+        per_block = self.block_size // dirent.TOTAL_SIZE
+        block_num = self.get_inode_block_at(dir_inode, idx // per_block)
+        return self.load_dirent(idx % per_block, block_num)
+
+    def write_dirent_by_index(
+        self, dir_inode: inode.Inode, idx: int, d: dirent.Dirent
+    ) -> None:
+        per_block = self.block_size // dirent.TOTAL_SIZE
+        block_num = self.get_inode_block_at(dir_inode, idx // per_block)
+        self.store_dirent(d, idx % per_block, block_num)
+
+    def remove_dirent(
+        self, dir_inode: inode.Inode, dir_inode_num: int, name: str
+    ) -> None:
+        """Find the dirent `name` in `dir_inode` and remove it by moving the
+        last dirent into its slot, then shrinking i_size. If the shrink
+        empties the trailing block, that data zone (and any index zones
+        that go with it) is released."""
+        target_idx = None
+        for i, d in enumerate(self.iter_dirents(dir_inode)):
+            if d.get_str_name() == name:
+                target_idx = i
+                break
+        if target_idx is None:
+            raise FileNotFoundError(name)
+
+        last_idx = (dir_inode.i_size // dirent.TOTAL_SIZE) - 1
+        if target_idx != last_idx:
+            last = self.read_dirent_by_index(dir_inode, last_idx)
+            self.write_dirent_by_index(dir_inode, target_idx, last)
+
+        old_blocks = self._blocks_for_size(dir_inode.i_size)
+        dir_inode.i_size -= dirent.TOTAL_SIZE
+        new_blocks = self._blocks_for_size(dir_inode.i_size)
+        if old_blocks > new_blocks:
+            self._release_inode_block(dir_inode, old_blocks - 1)
+
+        self.store_inode(dir_inode, dir_inode_num)
+
+    def _blocks_for_size(self, size_bytes: int) -> int:
+        """How many full filesystem blocks `size_bytes` of data occupy."""
+        return (size_bytes + self.block_size - 1) // self.block_size
+
+    def _release_inode_block(
+        self, ino: inode.Inode, file_block_idx: int
+    ) -> None:
+        """Free the data zone backing `file_block_idx` and cascade-free any
+        index blocks (single or double indirect) that become empty.
+        Modifies `ino.i_zone[]` in place; caller stores the inode."""
+        ptrs_per_block = self.block_size // 2
+        if file_block_idx < 7:
+            self._release_direct_zone(ino, file_block_idx)
+            return
+        rel = file_block_idx - 7
+        if rel < ptrs_per_block:
+            self._release_via_indirect(ino, 7, rel)
+            return
+        rel -= ptrs_per_block
+        outer, inner = divmod(rel, ptrs_per_block)
+        self._release_via_double_indirect(ino, outer, inner)
+
+    def _release_direct_zone(self, ino: inode.Inode, zone_idx: int) -> None:
+        if ino.i_zone[zone_idx] != 0:
+            self.free_zone(ino.i_zone[zone_idx])
+            ino.i_zone[zone_idx] = 0
+
+    def _release_via_indirect(
+        self, ino: inode.Inode, zone_idx: int, slot: int
+    ) -> None:
+        ind = ino.i_zone[zone_idx]
+        if ind == 0:
+            return
+        pointers = self.read_indirect_pointers(ind)
+        if pointers[slot] != 0:
+            self.free_zone(pointers[slot])
+            pointers[slot] = 0
+        if all(p == 0 for p in pointers):
+            self.free_zone(ind)
+            ino.i_zone[zone_idx] = 0
+        else:
+            self.write_indirect_pointers(ind, pointers)
+
+    def _release_via_double_indirect(
+        self, ino: inode.Inode, outer: int, inner: int
+    ) -> None:
+        dind = ino.i_zone[8]
+        if dind == 0:
+            return
+        outer_ptrs = self.read_indirect_pointers(dind)
+        ind = outer_ptrs[outer]
+        if ind == 0:
+            return
+        inner_ptrs = self.read_indirect_pointers(ind)
+        if inner_ptrs[inner] != 0:
+            self.free_zone(inner_ptrs[inner])
+            inner_ptrs[inner] = 0
+        if not all(p == 0 for p in inner_ptrs):
+            self.write_indirect_pointers(ind, inner_ptrs)
+            return
+        # Inner indirect is now empty: free it and clear the outer slot.
+        self.free_zone(ind)
+        outer_ptrs[outer] = 0
+        if all(p == 0 for p in outer_ptrs):
+            self.free_zone(dind)
+            ino.i_zone[8] = 0
+        else:
+            self.write_indirect_pointers(dind, outer_ptrs)
 
     def create_root_directories(self):
         # this will be a inode 1 - root dir
@@ -339,11 +554,11 @@ class MinixFS:
         data_block = self.sb.s_firstdatazone
 
         i = inode.Inode(
-            i_mode=int(inode.FileType.S_IFDIR) | 0o755,
-            i_uid=0,
+            i_mode=int(inode.FileType.S_IFDIR) | defaults.DEFAULT_DIR_MODE,
+            i_uid=defaults.DEFAULT_UID,
             i_size=dirent.TOTAL_SIZE * 2,  # for "." and ".."
-            i_time=0x699F6471,
-            i_gid=0,
+            i_time=defaults.DEFAULT_TIME,
+            i_gid=defaults.DEFAULT_GID,
             i_nlinks=2,  # for "." and ".."
             i_zone=[data_block] + [0 for i in range(0, 8)],
         )
@@ -394,11 +609,98 @@ class MinixFS:
         Returns the new inode number."""
         return self._create_entry(
             p,
-            mode=int(inode.FileType.S_IFREG) | 0o644,
+            mode=int(inode.FileType.S_IFREG) | defaults.DEFAULT_FILE_MODE,
             nlinks=1,
             zones=[0] * 9,
             child_size=0,
         )
+
+    def unlink(self, p: str) -> None:
+        """Remove a regular file at `p`. Errors if `p` is a directory."""
+        parent_inode, parent_num, child_inode, child_num = self._resolve_for_remove(p)
+        if self.is_directory(child_inode):
+            raise IsADirectoryError(f"is a directory: {p}")
+
+        self.free_inode_zones(child_inode, child_num)
+        self.free_inode(child_num)
+        self.remove_dirent(parent_inode, parent_num, path.basename(p))
+
+    def rmdir(self, p: str) -> None:
+        """Remove an empty directory at `p`."""
+        if p == "/" or not path.split(p):
+            raise ValueError("cannot remove the root directory")
+
+        parent_inode, parent_num, child_inode, child_num = self._resolve_for_remove(p)
+        if not self.is_directory(child_inode):
+            raise NotADirectoryError(f"not a directory: {p}")
+        if child_inode.i_size > dirent.TOTAL_SIZE * 2:
+            raise OSError(f"directory not empty: {p}")
+
+        self.free_inode_zones(child_inode, child_num)
+        self.free_inode(child_num)
+        self.remove_dirent(parent_inode, parent_num, path.basename(p))
+
+        # The removed dir's ".." was a link into the parent.
+        parent_inode = self.load_inode(parent_num)
+        parent_inode.i_nlinks -= 1
+        self.store_inode(parent_inode, parent_num)
+
+    def read_file(self, p: str) -> bytes:
+        """Return the full contents of the regular file at `p`."""
+        res = self.resolve_path(p)
+        if res is None:
+            raise FileNotFoundError(p)
+        ino, _ = res
+        if not self.is_regular_file(ino):
+            raise IsADirectoryError(p) if self.is_directory(ino) else PermissionError(p)
+        return self._read_inode_bytes(ino)
+
+    def write_file(self, p: str, data: bytes) -> int:
+        """Write `data` to `p`, creating the file if missing and truncating
+        if present. Returns the file's inode number."""
+        if len(data) > self.sb.s_max_size:
+            raise OSError(f"file too large: {len(data)} > {self.sb.s_max_size}")
+
+        res = self.resolve_path(p)
+        if res is None:
+            ino_num = self.touch(p)
+            ino = self.load_inode(ino_num)
+        else:
+            ino, ino_num = res
+            if not self.is_regular_file(ino):
+                raise IsADirectoryError(p)
+            self.free_inode_zones(ino, ino_num)
+
+        self._write_inode_bytes(ino, ino_num, data)
+        return ino_num
+
+    def copy_to(self, local_source: Path, minix_dest: str) -> int:
+        """Read `local_source` from the host filesystem and store at
+        `minix_dest` in the image. Overwrites if it already exists."""
+        return self.write_file(minix_dest, local_source.read_bytes())
+
+    def copy_from(self, minix_source: str, local_dest: Path) -> None:
+        """Read from the image and write to the host filesystem."""
+        local_dest.write_bytes(self.read_file(minix_source))
+
+    def populate_from_directory(
+        self, local_root: Path, minix_root: str = "/"
+    ) -> None:
+        """Recursively mirror the contents of `local_root` into `minix_root`.
+        Directories that already exist are reused; symlinks and other special
+        files are skipped with a printed warning."""
+        if not local_root.is_dir():
+            raise NotADirectoryError(local_root)
+
+        for entry in sorted(local_root.iterdir()):
+            target = (minix_root.rstrip("/") or "") + "/" + entry.name
+            if entry.is_dir() and not entry.is_symlink():
+                self.mkdir(target, parent=True)
+                self.populate_from_directory(entry, target)
+            elif entry.is_file() and not entry.is_symlink():
+                self.copy_to(entry, target)
+            else:
+                print(f"skip (unsupported entry type): {entry}")
 
     def mkdir(self, p: str, parent: bool = False) -> int:
         """Create directory at `p`. With `parent=True` behaves like
@@ -456,10 +758,10 @@ class MinixFS:
         child_num = self.allocate_inode()
         child_inode = inode.Inode(
             i_mode=mode,
-            i_uid=0,
+            i_uid=defaults.DEFAULT_UID,
             i_size=child_size,
-            i_time=0x699F6471,
-            i_gid=0,
+            i_time=defaults.DEFAULT_TIME,
+            i_gid=defaults.DEFAULT_GID,
             i_nlinks=nlinks,
             i_zone=zones,
         )
@@ -495,6 +797,57 @@ class MinixFS:
         self.store_inode(parent_inode, parent_num)
 
         return child_num
+
+    # -- internal: resolution / bulk file IO ------------------------------
+
+    def _resolve_for_remove(
+        self, p: str
+    ) -> tuple[inode.Inode, int, inode.Inode, int]:
+        """Resolve `p`'s parent and the entry itself, ready for removal.
+        Returns (parent_inode, parent_num, child_inode, child_num)."""
+        parent_path = path.parent(p)
+        name = path.basename(p)
+        if not name:
+            raise ValueError(f"invalid path: {p}")
+
+        parent_res = self.resolve_path(parent_path)
+        if parent_res is None:
+            raise FileNotFoundError(f"parent does not exist: {parent_path}")
+        parent_inode, parent_num = parent_res
+
+        entry = self.find_dirent(parent_inode, name)
+        if entry is None:
+            raise FileNotFoundError(p)
+        child_inode = self.load_inode(entry.inode)
+        return parent_inode, parent_num, child_inode, entry.inode
+
+    def _read_inode_bytes(self, ino: inode.Inode) -> bytes:
+        """Return all data bytes of `ino`, trimmed to i_size."""
+        out = bytearray()
+        remaining = ino.i_size
+        for block_num in self.iter_inode_blocks(ino):
+            if remaining <= 0:
+                break
+            block = self.read_block(block_num)
+            take = min(self.block_size, remaining)
+            out.extend(block[:take])
+            remaining -= take
+        return bytes(out)
+
+    def _write_inode_bytes(
+        self, ino: inode.Inode, ino_num: int, data: bytes
+    ) -> None:
+        """Allocate enough zones for `data`, write it, set i_size, store ino.
+        Assumes `ino` was already truncated (no leftover zones)."""
+        nblocks = (len(data) + self.block_size - 1) // self.block_size
+        for i in range(nblocks):
+            block_num = self.ensure_inode_has_block(ino, ino_num, i)
+            chunk = data[i * self.block_size : (i + 1) * self.block_size]
+            if len(chunk) < self.block_size:
+                chunk = chunk + b"\x00" * (self.block_size - len(chunk))
+            self.dev.write(block_num, list(chunk), 1)
+        ino.i_size = len(data)
+        self.store_inode(ino, ino_num)
 
     def mount(self):
         self.parse_superblock()
