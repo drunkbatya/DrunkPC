@@ -1,5 +1,3 @@
-; Print current OS version and other build metadata
-
 .include "applications/snake/snake.inc"
 .include "version/version.inc"
 .include "terminal/terminal.inc"
@@ -216,14 +214,6 @@ init_snake:
     pop bc  ; restoring bc
     pop de  ; restoring de
     pop hl  ; restoring hl
-    ret
-
-write_byte:
-    call ra6963_await_cmd_or_data
-    out (IO_LCD_DATA_ADDR), a  ; writing a char
-    ld a, RA6963_DATA_WRITE_AND_INC_ADDR  ; display address pointer will be incremented
-    call ra6963_await_cmd_or_data
-    out (IO_LCD_CMD_ADDR), a
     ret
 
 snake_main:
