@@ -36,12 +36,12 @@ ra6963_graphic_swap_buffers:
 
     ld a, (ra6963_graphic_selected_buffer_num) ; 0 - one, any - two
     or a  ; if a == 0
-    jr z, ra6963_graphic_swap_buffers_select_one  ; if a == 0
-    call ra6963_graphic_set_buffer_2  ; if no setting buffer 2
+    jr z, ra6963_graphic_swap_buffers_select_two  ; buffer 1 is selected, going to buffer 2
+    call ra6963_graphic_set_buffer_1  ; buffer 2 is selected, going to buffer 1
     jr ra6963_graphic_swap_buffers_end
 
-    ra6963_graphic_swap_buffers_select_one:
-    call ra6963_graphic_set_buffer_1  ; if yes
+    ra6963_graphic_swap_buffers_select_two:
+    call ra6963_graphic_set_buffer_2
 
     ra6963_graphic_swap_buffers_end:
     pop af  ; restoring af
@@ -49,7 +49,7 @@ ra6963_graphic_swap_buffers:
 
 ra6963_graphic_apply_buffer_address:
     push hl  ; storing hl
-    ld (ra6963_graphic_selected_buffer), hl  ; getting selected buffer address
+    ld hl, (ra6963_graphic_selected_buffer)  ; getting selected buffer address
     push hl  ; arg1 of ra6963_set_graphic_home_address
     call ra6963_set_graphic_home_address  ; set active buffer
     pop hl  ; restoring hl

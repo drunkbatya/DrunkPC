@@ -228,6 +228,7 @@ write_byte:
 
 snake_main:
     call ra6963_graphic_on
+    call clear_display
 
     call init_snake
 
