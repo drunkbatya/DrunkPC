@@ -79,7 +79,9 @@ snake_step:
     push hl  ; storing hl
     push de  ; storing de
 
-    ld hl, (snake_len)  ; loading snake len
+    ld a, (snake_len)  ; loading snake len
+    ld l, a  ; ; loading snake len
+    ld h, 0  ; snake_len is 1 byte
     add hl, hl  ; sizeof(snakePoint) = x and y = snake_len * 2
     push hl  ; arg3 of memmove - size
     ld hl, snake_dots
