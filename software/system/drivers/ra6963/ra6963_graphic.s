@@ -3,6 +3,58 @@
 
 .section .text
 
+ra6963_graphic_set_buffer_1:
+    push af  ; storing af
+    push hl  ; storing hl
+
+    ld hl, RA6963_GRAPHIC_BUFFER_ADDRESS_ONE  ; setting buffer 1
+    ld (ra6963_graphic_selected_buffer), hl  ; saving address
+
+    ld a, 0  ; enum
+    ld (ra6963_graphic_selected_buffer_num), a
+
+    pop hl  ; restoring hl
+    pop af  ; restoring af
+    ret
+
+ra6963_graphic_set_buffer_2:
+    push af  ; storing af
+    push hl  ; storing hl
+
+    ld hl, RA6963_GRAPHIC_BUFFER_ADDRESS_TWO  ; setting buffer 2
+    ld (ra6963_graphic_selected_buffer), hl  ; saving address
+
+    ld a, 1  ; enum
+    ld (ra6963_graphic_selected_buffer_num), a
+
+    pop hl  ; restoring hl
+    pop af  ; restoring af
+    ret
+
+ra6963_graphic_swap_buffers:
+    push af  ; storing af
+
+    ld a, (ra6963_graphic_selected_buffer_num) ; 0 - one, any - two
+    or a  ; if a == 0
+    jr z, ra6963_graphic_swap_buffers_select_one  ; if a == 0
+    call ra6963_graphic_set_buffer_2  ; if no setting buffer 2
+    jr ra6963_graphic_swap_buffers_end
+
+    ra6963_graphic_swap_buffers_select_one:
+    call ra6963_graphic_set_buffer_1  ; if yes
+
+    ra6963_graphic_swap_buffers_end:
+    pop af  ; restoring af
+    ret
+
+ra6963_graphic_apply_buffer_address:
+    push hl  ; storing hl
+    ld (ra6963_graphic_selected_buffer), hl  ; getting selected buffer address
+    push hl  ; arg1 of ra6963_set_graphic_home_address
+    call ra6963_set_graphic_home_address  ; set active buffer
+    pop hl  ; restoring hl
+    ret
+
 ra6963_graphic_on:
     push af  ; storing af
 
@@ -70,3 +122,9 @@ ra6963_draw_box:
     push hl  ; return address
     exx  ; restoring registers
     ret
+
+.section .bss
+ra6963_graphic_selected_buffer:
+    .skip 2
+ra6963_graphic_selected_buffer_num:
+    .skip 1  ; 0 - one, any - two

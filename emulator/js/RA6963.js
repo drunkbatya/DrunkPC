@@ -248,7 +248,7 @@ function RA6963() {
                     const dataByte = vram[graphicHomeAddressPtr + (canvasY * DISPLAY_WIDTH / 6) + canvasX];
                     for(let bit = 5; bit >= 0; bit--) {
                         if ((dataByte >> bit) & 0x01) {
-                            canvasSetPixelState((canvasX * 6) + (6 - bit), canvasY);
+                            canvasSetPixelState((canvasX * 6) + (5 - bit), canvasY);
                         } else {
                         }
 

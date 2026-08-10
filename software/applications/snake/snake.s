@@ -61,9 +61,11 @@ snake_await_tick_process_keyboard:
     jr no_key
 
     timer_move_snake:
+    call ra6963_graphic_swap_buffers
     call clear_display
     call move_snake
     call draw_snake
+    call ra6963_graphic_apply_buffer_address
 
     no_key:
     jr snake_await_tick_process_keyboard_await_keyboard  ; keyboard loop
@@ -195,7 +197,7 @@ clear_display:
     push hl
     ld hl, 2560  ; arg2 for ra6963_memset - size (240/6 * 64)
     push hl
-    ld hl, 0  ; arg1 for ra6963_memset - address
+    ld hl, (ra6963_graphic_selected_buffer)  ; arg1 for ra6963_memset - address
     push hl
     call ra6963_memset
     pop hl  ; restoring hl
@@ -226,7 +228,6 @@ write_byte:
 
 snake_main:
     call ra6963_graphic_on
-    call clear_display
 
     call init_snake
 

@@ -10,7 +10,6 @@ RA6963_SET_TEXT_AREA = 0x41
 RA6963_SET_GRAPHIC_HOME_ADDRESS = 0x42
 RA6963_SET_GRAPHIC_AREA = 0x43
 RA6963_SET_ADDRESS_POINTER = 0x24
-RA6963_GRAPHIC_RAM_START_ADDR = 0x0000
 RA6963_SET_BIT = 0xF8
 RA6963_SET_OFFSET_REGISTER = 0x22
 
@@ -50,9 +49,9 @@ RA6963_FONT_OFFSET = 32
 RA6963_FONT_WIDTH = 6
 RA6963_FONT_HEIGHT = 8
 
-; custom font
-RA6963_CUSTOM_FONT_START_ADDR = 0x7800
-RA6963_OFFSET_REGISTER_VALUE = RA6963_CUSTOM_FONT_START_ADDR / 2048
+; graphic buffers
+RA6963_GRAPHIC_BUFFER_ADDRESS_ONE = 0x0000
+RA6963_GRAPHIC_BUFFER_ADDRESS_TWO = 0x2560
 
 ; functions
 .global ra6963_init
@@ -73,16 +72,19 @@ RA6963_OFFSET_REGISTER_VALUE = RA6963_CUSTOM_FONT_START_ADDR / 2048
 .global ra6963_apply_zero_offset
 .global ra6963_memset
 .global ra6963_set_cursor_pointer
-.global ra6963_custom_font_init
 .global ra6963_memcpy
 .global ra6963_text_mode_cursor_off
 .global ra6963_draw_box
 .global ra6963_text_mode_cursor_on
 
 .global ra6963_graphic_on
+.global ra6963_graphic_set_buffer_1
+.global ra6963_graphic_set_buffer_2
+.global ra6963_graphic_swap_buffers
+.global ra6963_graphic_apply_buffer_address
 
 ; variables
-.global ra6963_zero_offset
 .global ra6963_address_pointer
+.global ra6963_graphic_selected_buffer
 
 ; vim: set ft=asm:
