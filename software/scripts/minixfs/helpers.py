@@ -1,3 +1,11 @@
+def round_up_div(value: int, divisor: int) -> int:
+    return (value + divisor - 1) // divisor
+
+
+def round_up(value: int, multiple: int) -> int:
+    return round_up_div(value, multiple) * multiple
+
+
 def mode_to_str(mode: int) -> str:
     ftype = mode & 0o170000
     type_ch = {

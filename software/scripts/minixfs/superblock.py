@@ -1,7 +1,19 @@
 import struct
 from dataclasses import dataclass
 
+SB_MAGIC_SHORT_FN = 0x137F
 SB_MAGIC_LONG_FN = 0x138F
+
+SB_MAGIC_NAMES: dict[int, str] = {
+    SB_MAGIC_SHORT_FN: "minix v1, 14 char names",
+    SB_MAGIC_LONG_FN: "minix v1, 30 char names",
+    0x2468: "minix v2, 14 char names",
+    0x2478: "minix v2, 30 char names",
+    0x4D5A: "minix v3",
+}
+
+SB_STATE_VALID_FS = 0x0001
+SB_STATE_ERROR_FS = 0x0002
 
 # H = uint16, L = uint32
 SB_STRUCT = struct.Struct(
@@ -53,3 +65,6 @@ class SuperBlock:
 
         fields = SB_STRUCT.unpack_from(buf, 0)
         return cls(*fields)
+
+    def magic_name(self) -> str:
+        return SB_MAGIC_NAMES.get(self.s_magic, "unknown")

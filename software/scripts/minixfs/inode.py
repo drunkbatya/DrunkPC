@@ -1,6 +1,6 @@
 import struct
 from dataclasses import dataclass
-from enum import IntEnum, IntFlag
+from enum import IntEnum
 
 
 class FileType(IntEnum):
@@ -12,6 +12,8 @@ class FileType(IntEnum):
     S_IFCHR = 0x2000
     S_IFIFO = 0x1000
 
+
+FILE_TYPE_MASK: int = 0o170000
 
 # B = uint8, H = uint16, L = uint32
 I_STRUCT = struct.Struct(
@@ -26,6 +28,12 @@ I_STRUCT = struct.Struct(
 )
 
 I_ZONE_COUNT: int = 9
+DIRECT_ZONE_COUNT: int = 7
+INDIRECT_ZONE_INDEX: int = 7
+DOUBLE_INDIRECT_ZONE_INDEX: int = 8
+
+MAX_LINKS: int = 0xFF
+
 TOTAL_SIZE: int = 32
 
 
@@ -72,3 +80,21 @@ class Inode:
             i_nlinks=fields[5],
             i_zone=list(fields[6:]),
         )
+
+    @classmethod
+    def create(cls, file_type: FileType, permissions: int, timestamp: int) -> "Inode":
+        return cls(
+            i_mode=int(file_type) | permissions,
+            i_uid=0,
+            i_size=0,
+            i_time=timestamp,
+            i_gid=0,
+            i_nlinks=0,
+            i_zone=[0x00] * I_ZONE_COUNT,
+        )
+
+    def file_type(self) -> int:
+        return self.i_mode & FILE_TYPE_MASK
+
+    def is_directory(self) -> bool:
+        return self.file_type() == int(FileType.S_IFDIR)

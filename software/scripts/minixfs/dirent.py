@@ -1,6 +1,5 @@
 import struct
 from dataclasses import dataclass
-from enum import IntEnum, IntFlag
 
 # B = uint8, H = uint16, L = uint32
 D_STRUCT = struct.Struct(
@@ -12,6 +11,9 @@ D_STRUCT = struct.Struct(
 NAME_SIZE = 30
 TOTAL_SIZE = NAME_SIZE + 2
 
+SELF_NAME = "."
+PARENT_NAME = ".."
+
 
 @dataclass
 class Dirent:
@@ -21,9 +23,17 @@ class Dirent:
     @classmethod
     def from_str_name(cls, inode: int, name: str) -> "Dirent":
         name_bytes = name.encode("ascii")
-        name_bytes = name_bytes[:NAME_SIZE]
+        if len(name_bytes) > NAME_SIZE:
+            raise Exception(
+                f"Dirent name `{name}` is `{len(name_bytes)}` bytes, limit is `{NAME_SIZE}`"
+            )
+
         name_bytes = name_bytes.ljust(NAME_SIZE, b"\x00")
         return cls(inode=inode, name=list(name_bytes))
+
+    @classmethod
+    def empty(cls) -> "Dirent":
+        return cls(inode=0, name=[0x00] * NAME_SIZE)
 
     def get_str_name(self) -> str:
         b = bytes(self.name)
@@ -35,7 +45,7 @@ class Dirent:
 
     def pack(self) -> list[int]:
         assert isinstance(self.name, list)
-        assert len(self.name) <= NAME_SIZE
+        assert len(self.name) == NAME_SIZE
 
         raw = D_STRUCT.pack(
             self.inode,

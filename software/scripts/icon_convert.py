@@ -2,9 +2,10 @@
 # This code was taken from the official Flipper Zero firmware repository:
 # https://github.com/flipperdevices/flipperzero-firmware
 # And distributes under GNU GPL-3.0 license
+import argparse
 import io
 import os
-import argparse
+
 from PIL import Image, ImageOps
 
 ICONS_SUPPORTED_FORMATS = ["png"]
