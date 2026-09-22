@@ -9,12 +9,12 @@ $(BUILDDIR)/$(TARGET)_updater_cf_image.img: $(BUILDDIR)/$(TARGET).bin
 	@echo "\tMKIMG\t" $@
 	@mkdir -p $(@D)
 	@$(UPDATE_IMAGE_GEN) \
-		--firmware_file "$<" \
-		--output_file "$@" \
-		--git_tag "$(VERSION)" \
-		--git_branch "$(GIT_BRANCH)" \
-		--git_hash "$(GIT_COMMIT)" \
-		--build_date "$(BUILD_DATE)"
+		--firmware-file "$<" \
+		--output-file "$@" \
+		--git-tag "$(VERSION)" \
+		--git-branch "$(GIT_BRANCH)" \
+		--git-hash "$(GIT_COMMIT)" \
+		--build-date "$(BUILD_DATE)"
 
 $(BUILDDIR)/%.s: %.tmpl $(TMPL_SOURCES) $(ASM_INCLUDES) $(MAKE_FILES) | $(BUILDDIR)
 	@echo "\tTMPL\t" $<

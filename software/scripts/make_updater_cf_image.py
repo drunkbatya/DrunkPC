@@ -97,12 +97,12 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Creating updater CF image for DrunkPC"
     )
-    parser.add_argument("--firmware_file", help="Firmware bin file", required=True)
-    parser.add_argument("--output_file", help="Output img file", required=True)
-    parser.add_argument("--git_tag", help="Firmware git tag", required=True)
-    parser.add_argument("--git_branch", help="Firmware git branch", required=True)
-    parser.add_argument("--git_hash", help="Firmware git hash", required=True)
-    parser.add_argument("--build_date", help="Firmware build date", required=True)
+    parser.add_argument("--firmware-file", help="Firmware bin file", required=True)
+    parser.add_argument("--output-file", help="Output img file", required=True)
+    parser.add_argument("--git-tag", help="Firmware git tag", required=True)
+    parser.add_argument("--git-branch", help="Firmware git branch", required=True)
+    parser.add_argument("--git-hash", help="Firmware git hash", required=True)
+    parser.add_argument("--build-date", help="Firmware build date", required=True)
     return parser.parse_args()
 
 

@@ -72,6 +72,8 @@ class CFImageCreator:
         needs_format = force or not disk_path.exists()
         if needs_format:
             self.__create_image(disk_path, disk_size)
+        else:
+            print(f"file already exists, skipping format: `{disk_path}`")
 
         self.cf = CompactFlashEmulator(disk_path)
         self.minixfs = MinixFS(self.cf, timestamp=timestamp)
@@ -120,10 +122,11 @@ class CFImageCreator:
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Creating CF image with MinixFS for DrunkPC"
+        description="Creating CF image with MinixFS for DrunkPC",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "-o", "--output_file", help="Output img file", default="disk_minixfs_test.img"
+        "-o", "--output-file", help="Output img file", default="disk_minixfs_test.img"
     )
     parser.add_argument(
         "-f",
@@ -133,7 +136,7 @@ def parse_args():
         default=False,
     )
     parser.add_argument(
-        "--source_dir", help="Recursive copy specified directory content to image"
+        "--source-dir", help="Recursive copy specified directory content to image"
     )
     parser.add_argument("-s", "--size", help="Size of image in MB", type=int, default=1)
     parser.add_argument(
