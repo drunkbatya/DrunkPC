@@ -7,8 +7,6 @@ ra6963_init:
     push af
     push hl
 
-    ;call ra6963_custom_font_init
-
     ; set text home address
     ld hl, 0
     push hl
@@ -26,9 +24,8 @@ ra6963_init:
     out (IO_LCD_CMD_ADDR), a
 
     ; set graphic home addres
-    ld hl, RA6963_GRAPHIC_RAM_START_ADDR
-    push hl
-    call ra6963_set_graphic_home_address
+    call ra6963_graphic_set_buffer_1
+    call ra6963_graphic_apply_buffer_address
 
     ; set graphic area
     call ra6963_await_cmd_or_data

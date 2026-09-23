@@ -17,6 +17,16 @@ xxd: $(BUILDDIR)/$(TARGET).bin
 .PHONY: flash
 flash: $(BUILDDIR)/$(TARGET).bin
 	@echo "\tFLASH\t" $(BUILDDIR)/$(TARGET).bin
+	@$(DEBUGGER_TOOL) \
+		-c "power_on" \
+		-c "acquire_bus" \
+		-c "write_flash $(BUILDDIR)/$(TARGET).bin 0x0000" \
+		-c "verify_flash $(BUILDDIR)/$(TARGET).bin 0x0000" \
+		-c "release_bus"
+
+.PHONY: flash-minipro
+flash-minipro: $(BUILDDIR)/$(TARGET).bin
+	@echo "\tFLASH\t" $(BUILDDIR)/$(TARGET).bin
 	@minipro --device "AT28C256" --write $(BUILDDIR)/$(TARGET).bin -s -u
 
 .PHONY: clean

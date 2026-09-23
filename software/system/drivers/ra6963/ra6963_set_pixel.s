@@ -17,7 +17,7 @@ ra6963_set_pixel:
     ld ix, 12  ; there is no way to set load sp value to ix, skipping pushed 5 reg pairs and the return address
     add ix, sp  ; loading sp value to ix
 
-    ld hl, RA6963_GRAPHIC_RAM_START_ADDR  ; display address pointer
+    ld hl, (ra6963_graphic_selected_buffer)  ; display address pointer
     ld b, (ix + 1)  ; loading 'y' to a
     ld a, b  ; loading y to a
     or a  ; check if 'y' is 0

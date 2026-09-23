@@ -1,5 +1,3 @@
-; Print current OS version and other build metadata
-
 .include "applications/snake/snake.inc"
 .include "version/version.inc"
 .include "terminal/terminal.inc"
@@ -61,9 +59,11 @@ snake_await_tick_process_keyboard:
     jr no_key
 
     timer_move_snake:
+    call ra6963_graphic_swap_buffers
     call clear_display
     call move_snake
     call draw_snake
+    call ra6963_graphic_apply_buffer_address
 
     no_key:
     jr snake_await_tick_process_keyboard_await_keyboard  ; keyboard loop
@@ -79,7 +79,9 @@ snake_step:
     push hl  ; storing hl
     push de  ; storing de
 
-    ld hl, (snake_len)  ; loading snake len
+    ld a, (snake_len)  ; loading snake len
+    ld l, a  ; ; loading snake len
+    ld h, 0  ; snake_len is 1 byte
     add hl, hl  ; sizeof(snakePoint) = x and y = snake_len * 2
     push hl  ; arg3 of memmove - size
     ld hl, snake_dots
@@ -193,7 +195,7 @@ clear_display:
     push hl
     ld hl, 2560  ; arg2 for ra6963_memset - size (240/6 * 64)
     push hl
-    ld hl, 0  ; arg1 for ra6963_memset - address
+    ld hl, (ra6963_graphic_selected_buffer)  ; arg1 for ra6963_memset - address
     push hl
     call ra6963_memset
     pop hl  ; restoring hl
@@ -212,14 +214,6 @@ init_snake:
     pop bc  ; restoring bc
     pop de  ; restoring de
     pop hl  ; restoring hl
-    ret
-
-write_byte:
-    call ra6963_await_cmd_or_data
-    out (IO_LCD_DATA_ADDR), a  ; writing a char
-    ld a, RA6963_DATA_WRITE_AND_INC_ADDR  ; display address pointer will be incremented
-    call ra6963_await_cmd_or_data
-    out (IO_LCD_CMD_ADDR), a
     ret
 
 snake_main:

@@ -10,3 +10,4 @@ PY = python3
 ASSETS_COMPILER = scripts/icon_convert.py
 UPDATE_IMAGE_GEN = scripts/make_updater_cf_image.py
 ENVSUBST = envsubst
+DEBUGGER_TOOL = drunkpc-debugger
