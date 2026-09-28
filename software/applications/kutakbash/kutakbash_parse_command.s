@@ -4,12 +4,11 @@
 .include "applications/test_app/test_app.inc"
 .include "applications/clear/clear.inc"
 .include "applications/disp_ptr/disp_ptr.inc"
-.include "applications/less/less.inc"
 .include "applications/cf_info/cf_info.inc"
 .include "applications/cf_test/cf_test.inc"
+.include "applications/malloc_test/malloc_test.inc"
 .include "applications/updater/updater.inc"
 .include "applications/snake/snake.inc"
-.include "applications/msbasic/msbasic.inc"
 
 .section .text
 
@@ -111,10 +110,6 @@ internal_commands:  ; TODO: separate this to compile-time templated file
     .word disp_ptr_name
     .word disp_ptr_main
     ; disp_ptr
-    ; less
-    .word less_name
-    .word less_main
-    ; less
     ; cf_info
     .word cf_info_name
     .word cf_info_main
@@ -123,6 +118,10 @@ internal_commands:  ; TODO: separate this to compile-time templated file
     .word cf_test_name
     .word cf_test_main
     ; cf_test
+    ; malloc_test
+    .word malloc_test_name
+    .word malloc_test_main
+    ; malloc_test
     ; uname
     .word uname_name
     .word uname_main
@@ -135,8 +134,4 @@ internal_commands:  ; TODO: separate this to compile-time templated file
     .word snake_name
     .word snake_main
     ; snake
-    ; msbasic
-    .word msbasic_name
-    .word msbasic_main
-    ; msbasic
 internal_commands_end:  ; just to know the size..
