@@ -77,8 +77,8 @@ kutakbash_parse_command_exec:  ; TODO: probably, this relates to whole system, n
     ld e, (hl)  ; low address byte
     inc hl
     ld d, (hl)  ; getting a high address byte
-    push de  ; ld hl, de
-    pop hl  ; ld hl, de
+    ld l, e  ; ld hl, de
+    ld h, d  ; ld hl, de
     jp (hl)  ; i hope we'll be back..
 
     kutakbash_parse_command_exec_loop_end:

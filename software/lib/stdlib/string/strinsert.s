@@ -34,8 +34,8 @@ strinsert:
     ld e, (ix + 2)  ; position low byte
     ld d, (ix + 3)  ; position high byte
     add hl, de  ; string start + position
-    push hl  ; ld de, hl
-    pop de  ; ld de, hl
+    ld e, l  ; ld de, hl
+    ld d, h  ; ld de, hl
 
     ; loading string end
     ld l, (ix + 0)  ; str ptr low byte
@@ -56,8 +56,8 @@ strinsert:
         jr strinsert_loop
     strinsert_loop_end:
     ; inserting requested char to the position
-    push de  ; ld hl, de
-    pop hl  ; ld hl, de
+    ld l, e  ; ld hl, de
+    ld h, d  ; ld hl, de
     ld a, (ix + 4)  ; loading char c
     ld (hl), a  ;  inserting requested char to the position
 

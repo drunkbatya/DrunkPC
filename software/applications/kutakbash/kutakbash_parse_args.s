@@ -54,17 +54,17 @@ kutakbash_parse_args:
         ld (kutakbash_argc), a  ; storing a new argc value
 
         ; saving current string ptr to current argv position
-        push hl  ; storing user string current ptr
-        pop bc  ; ld bc, hl, loading str ptr to bc
-        push de  ; ld hl, de
-        pop hl  ; loading a current kutakbash_argv addr to hl
+        ld c, l  ; ld bc, hl, loading str ptr to bc
+        ld b, h  ; ld bc, hl, loading str ptr to bc
+        ld l, e  ;  ld hl, de, loading a current kutakbash_argv addr to hl
+        ld h, d  ;  ld hl, de, loading a current kutakbash_argv addr to hl
         ld (hl), c  ; string low string address to kutakbash_argv
         inc hl  ; goint to next kutakbash_argv byte
         ld (hl), b  ; string high string address to kutakbash_argv
         inc de  ; current kutakbash_argv++
         inc de  ; current kutakbash_argv++ (2 bytes)
-        push bc  ; ld hl, bc
-        pop hl  ; restoring user string current ptr
+        ld l, c  ; ld hl, bc
+        ld h, b  ; ld hl, bc, restoring user string current ptr
         jr kutakbash_parse_args_loop_next
 
         kutakbash_parse_args_separator_found:

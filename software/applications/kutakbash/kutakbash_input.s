@@ -75,8 +75,8 @@ kutakbash_get_input_string:
 
         ; preparing position to send to the strappend
         ld hl, (kutakbash_local_cursor_position)
-        push hl  ; ld bc, hl
-        pop bc  ; ld bc, hl
+        ld c, l  ; ld bc, hl
+        ld b, h  ; ld bc, hl
 
         ; determinating buffer str length
         push de  ; arg1 of the strlen function, pointer to the dst string
